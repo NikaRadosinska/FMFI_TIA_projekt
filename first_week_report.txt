@@ -1,0 +1,8 @@
+1. Nikola Radošinská
+2. Odporúčací systém na hry a filmy.
+3. 13.-19.3.2023
+4. Nič
+5. Nič
+6. Nie sú rozdieli
+7. Implementácia prihlasovania
+8. Nemala som problémy
