@@ -1,0 +1,93 @@
+type Book {
+    id: ID
+    name: String
+    pageCount: Int
+    author: Author}
+type Author {
+    id: ID
+    firstName: String
+    lastName: String}
+
+
+type Query {
+    bookById(id: ID!): Book
+
+    getAllUserNames: [String]
+    userIfCorrectPassword(userName: String!, password: String!): User
+}
+
+type Mutation {
+    addUser(userName: String!, password: String!): User
+    addAdmin(userName: String!, password: String!): User
+}
+
+type User {
+    id: ID!
+    userName: String!
+    password: String!
+    isAdmin: Boolean!
+}
+
+type Group {
+    id: ID!
+    name: String!
+}
+
+type Friend {
+    userOne: User!
+    userTwo: User!
+}
+
+type Member {
+    group: Group!
+    user: User!
+}
+
+type Recommendation {
+    id: ID!
+    sender: User!
+    title: String!
+    description: String
+    rating: Int!
+}
+
+type Genre {
+    id: ID!
+    name: String!
+}
+
+type RecommendationsGenre {
+    recommendation: Recommendation!
+    genre: Genre!
+}
+
+type GameAddition {
+    recommendation: Recommendation!
+    playedTime: Float
+    overallTime: Float
+}
+
+type RecommendationForGroup {
+    recommendation: Recommendation!
+    group: Group!
+}
+
+type RecommendationForFriend{
+    recommendation: Recommendation!
+    receiver: User!
+}
+
+enum FeedbackerState {
+    DISINTEREST
+    INTEREST
+    SEEN_OR_PLAYED
+}
+
+type Feedback {
+    id: ID!
+    user: User!
+    recommendation: Recommendation!
+    state: FeedbackerState!
+    rating: Int!
+    commentary: String
+}
