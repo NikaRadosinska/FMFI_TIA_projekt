@@ -70,8 +70,9 @@ function InitialData() {
 
   const [errorMessages, setErrorMessages] = useState({});
   const { loading, error, data } = useQuery(GET_ALL_USERNAMES);
-  const [getUserByPassword, { loadingUser, errorUser, dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
-  const isEnteredPassword = loadingUser != undefined && loadingUser != false;
+  const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
+  const isEnteredPassword = loadingUser == false && dataUser != undefined;
+  const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null
 
   const HandleSubmit = (event) => {
     event.preventDefault();
@@ -92,7 +93,7 @@ function InitialData() {
       <div className="error">{errorMessages.message}</div>
     );
 
-  const renderForm = (
+  const renderLoginForm = (
     <div className="form">
       <form onSubmit={HandleSubmit}>
         {renderErrorMessage("waitForResponseAboutPassword")}
@@ -114,12 +115,11 @@ function InitialData() {
   );
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
-  console.log("loadingUser:" + loadingUser + "   errorUser:" + errorUser + "   dataUser:" + dataUser);
-  if(isEnteredPassword && !dataUser) setErrorMessages({ name: "pass", message: errors.pass });
+  if (isEnteredPassword && !isEnteredCorrectPassword && errorMessages.name != "pass") setErrorMessages({ name: "pass", message: errors.pass })
   return (
     <div className="login-form">
       <div className="title">Sign In</div>
-      {(isEnteredPassword && dataUser) ? <div>User is successfully logged in</div> : (renderForm)}
+      {(isEnteredPassword && isEnteredCorrectPassword) ? <div>User is successfully logged in</div> : (renderLoginForm)}
     </div>
   )
 }
