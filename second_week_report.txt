@@ -6,6 +6,7 @@
    Vytvorenie React projektu
    Vytvorenie Graphql schémy a napojenie na Spring a React
    Čiastočná implementácia prihlasovania
+   --Všetko v jednom commite názov: Spring + Graphql + React + partial login (d6137a0)
 6. Dlhšie mi trvalo zapojiť Spring, React a Graphql a rozhodla som sa ich zapojiť hneď od začiatku
 7. Dokončiť prihlasovanie a registráciu + zadaný plán v špecifikácii
 8. So všetkým, všetko vidím prvý krát a je to všetko nové, musím si na tie technológie zvyknúť
