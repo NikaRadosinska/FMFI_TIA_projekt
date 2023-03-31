@@ -2,6 +2,7 @@ package com.example.demo.model;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -19,11 +20,11 @@ public class User {
         this.isAdmin = isAdmin;
     }
 
-    private static List<User> users = Arrays.asList(
+    private static List<User> users = new ArrayList<>(Arrays.asList(
             new User(0,"admin", "admin123", true),
             new User(1,"userOne", "userOnePassword", false),
             new User(2,"userTwo", "userTwoPassword", false)
-    );
+    ));
 
     public static List<String> getAllUserNames(){
         return users.stream().map(user -> user.userName).toList();

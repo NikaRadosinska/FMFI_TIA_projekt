@@ -1,11 +1,12 @@
 import logo from './logo.svg';
 import './App.css';
-import { useQuery, gql, useLazyQuery } from '@apollo/client';
+import { useQuery, gql, useLazyQuery, useMutation } from '@apollo/client';
 import React, { useEffect, useState } from 'react'
 import SongCard from './SongCard';
 import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
+import Button from 'react-bootstrap/Button';
 
 const initialState = {
   isLoading: true,
@@ -42,6 +43,16 @@ query getUserIfCorrectPassword($userName: String!, $password: String!) {
   }
 }
 `;
+const ADD_USER = gql `
+mutation getAddUser($userName: String!, $password: String!) {
+  addUser(userName: $userName, password: $password){
+    id
+    userName
+    password
+    isAdmin
+  }
+}
+`;
 
 function DisplayBook() {
   const { loading, error, data } = useQuery(GET_BOOK_ONE);
@@ -62,19 +73,53 @@ function DisplayBook() {
 
 
 function InitialData() {
+  //ENUMS
   const errors = {
-    uname: "invalid username",
-    pass: "invalid password",
-    waitForResponseAboutPassword: "wait"
+    wrongUsername: "invalid username",
+    wrongPassword: "invalid password",
+    waitForResponseAboutPassword: "wait",
+    usedUsername: "username is already used",
+    differentControlPassword: "second password is not the same",
+    waitForResponseAboutAddUser: "wait"
   };
 
+  //STATES
+  const [isLoginForm, setIsLoginForm] = useState(true);
   const [errorMessages, setErrorMessages] = useState({});
   const { loading, error, data } = useQuery(GET_ALL_USERNAMES);
   const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
-  const isEnteredPassword = loadingUser == false && dataUser != undefined;
-  const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null
+  const [getAddUserData, {loading: loadingAddUser, error: errorAddUser, data: dataAddUser}] = useMutation(ADD_USER);
+  const isEnteredPassword = loadingUser === false && dataUser != undefined;
+  const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
+  const isSignin = loadingAddUser == false && dataAddUser;
 
-  const HandleSubmit = (event) => {
+
+  //HANDLERS
+  const HandleChangeLoginSigin = (event) => {
+    //event.preventDefault();
+    console.log("change form");
+    setIsLoginForm(!isLoginForm);
+  }
+
+  const HandleSigninFormSubmit = (event) => {
+    event.preventDefault();
+    console.log(document.forms);
+    var { uname, passOne, passTwo } = document.forms[0];
+    const userData = data.getAllUserNames.find((user) => user === uname.value);
+    if(userData){
+      setErrorMessages({name: "usedUsername", message: errors.usedUsername });
+    }
+    else{
+      if (passOne.value === passTwo.value){
+        getAddUserData({ variables: { userName: uname.value, password: passOne.value } });
+      }
+      else {
+        setErrorMessages({name: "differentControlPassword", message: errors.differentControlPassword});
+      }
+    }
+  }
+
+  const HandleLoginFormSubmit = (event) => {
     event.preventDefault();
     var { uname, pass } = document.forms[0];
 
@@ -84,44 +129,92 @@ function InitialData() {
       console.log("Should be set" + uname.value + " " + pass.value);
       getUserByPassword({ variables: { userName: uname.value, password: pass.value } });
     } else {
-      setErrorMessages({ name: "uname", message: errors.uname });
+      setErrorMessages({ name: "wrongUsername", message: errors.wrongUsername });
     }
   }
 
+  //HTML RETURN_FUNCTIONS/VARIABLES
   const renderErrorMessage = (name) =>
     name === errorMessages.name && (
       <div className="error">{errorMessages.message}</div>
     );
 
   const renderLoginForm = (
-    <div className="form">
-      <form onSubmit={HandleSubmit}>
+    <div className="LoginForm">
+      <form onSubmit={HandleLoginFormSubmit}>
         {renderErrorMessage("waitForResponseAboutPassword")}
         <div className="input-container">
           <label>Username </label>
           <input type="text" name="uname" required />
-          {renderErrorMessage("uname")}
+          {renderErrorMessage("wrongUsername")}
         </div>
         <div className="input-container">
           <label>Password </label>
           <input type="password" name="pass" required />
-          {renderErrorMessage("pass")}
+          {renderErrorMessage("wrongPassword")}
         </div>
         <div className="button-container">
-          <input type="submit"/>
+          <input type="submit" />
         </div>
       </form>
     </div>
   );
+
+  const renderSigninForm = (
+    <div className="SigninForm">
+      <form onSubmit={HandleSigninFormSubmit}>
+        {renderErrorMessage("waitForResponseAboutAddUser")}
+        <div className="input-container">
+          <label>Username </label>
+          <input type="text" name="uname" required />
+          {renderErrorMessage("usedUsername")}
+        </div>
+        <div className="input-container">
+          <label>Password </label>
+          <input type="password" name="passOne" required />
+        </div>
+        <div className="input-container">
+          <label>Password second time</label>
+          <input type="password" name="passTwo" required />
+          {renderErrorMessage("differentControlPassword")}
+        </div>
+        <div className="button-container">
+          <input type="submit" />
+        </div>
+      </form>
+    </div>
+  );
+
+  //CODE
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
-  if (isEnteredPassword && !isEnteredCorrectPassword && errorMessages.name != "pass") setErrorMessages({ name: "pass", message: errors.pass })
-  return (
-    <div className="login-form">
-      <div className="title">Sign In</div>
-      {(isEnteredPassword && isEnteredCorrectPassword) ? <div>User is successfully logged in</div> : (renderLoginForm)}
-    </div>
-  )
+
+  let toReturn;
+
+  if (isLoginForm) {
+    console.log("login form");
+    if (isEnteredPassword && !isEnteredCorrectPassword && errorMessages.name != "wrongPassword") setErrorMessages({ name: "wrongPassword", message: errors.wrongPassword })
+    toReturn = (
+      <div key="form" className="login-form">
+        <div className="title">Log In</div>
+        {(isEnteredPassword && isEnteredCorrectPassword) ? <div>User is successfully logged in</div> : (renderLoginForm)}
+      </div>
+    )
+  }
+  else {
+    console.log("signin form");
+    toReturn = (
+      <div key="form" className="signin-form">
+        <div className="title">Sign In</div>
+        {(isSignin) ? <div>User is successfully signed in</div> : (renderSigninForm)}
+      </div>
+    )
+  }
+
+  return [
+    toReturn,
+    <Button key="changeFormButton" onClick = {() => HandleChangeLoginSigin()}>{(isLoginForm) ? (<>Sign in</>) : (<>Log in</>)}</Button>
+  ]
 }
 
 const App = () => {
@@ -171,7 +264,6 @@ const App = () => {
     <div className="App">
       <InitialData />
     </div>
-
   )
 }
 export default App;
