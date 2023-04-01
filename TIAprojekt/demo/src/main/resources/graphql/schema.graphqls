@@ -20,6 +20,9 @@ type Query {
 type Mutation {
     addUser(userName: String!, password: String!): User
     addAdmin(userName: String!, password: String!): User
+
+    addFriend(id: Int!, username: String!): Boolean
+    removeFriend(id: Int!, username: String!): Boolean
 }
 
 type User {

@@ -29,4 +29,14 @@ public class Friends {
     public static List<String> getFriendsUsernames(int id){
         return friends.stream().filter(friends -> friends.id1 == id || friends.id2 == id).map(friends -> (friends.id1 == id) ? (friends.id2) : (friends.id1)).map(userId -> User.getById(userId).getUserName()).toList();
     }
+
+    public static boolean addFriend(int id, String username){
+        User friend = User.getByUsername(username);
+        return friends.add(new Friends(id, friend.getId()));
+    }
+
+    public static boolean removeFriend(int id, String username){
+        User friend = User.getByUsername(username);
+        return friends.removeIf(pair -> (pair.id1 == id && pair.id2 == friend.getId()) || (pair.id1 == friend.getId() && pair.id2 == id));
+    }
 }

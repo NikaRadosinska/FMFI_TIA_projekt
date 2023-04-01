@@ -61,6 +61,20 @@ query getFriends($id: Int!) {
 }
 `;
 
+const ADD_FRIEND = gql`
+mutation addFriend($id: Int!, $username: String!) {
+  addFriend(id: $id, username: $username)
+}
+`;
+
+const REMOVE_FRIEND = gql`
+mutation removeFriend($id: Int!, $username: String!) {
+  removeFriend(id: $id, username: $username)
+}
+`;
+
+
+
 function DisplayBook() {
   const { loading, error, data } = useQuery(GET_BOOK_ONE);
 
@@ -87,16 +101,23 @@ function InitialData() {
     waitForResponseAboutPassword: "wait",
     usedUsername: "username is already used",
     differentControlPassword: "second password is not the same",
-    waitForResponseAboutAddUser: "wait"
+    waitForResponseAboutAddUser: "wait",
+    noSuchUser: "no existing user with such username",
+    yourUsername: "you can not add yourself as a friend",
+    notYourFriend: "user is not in your fiend list"
   };
 
   //STATES
   const [isLoginForm, setIsLoginForm] = useState(true);
+  const [reloadFriends, setReloadFriends] = useState(false);
+  const [toReloadFriends, setToReloadFriends] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
   const { loading, error, data } = useQuery(GET_ALL_USERNAMES);
   const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
   const [getAddUserData, { loading: loadingAddUser, error: errorAddUser, data: dataAddUser }] = useMutation(ADD_USER);
-  const [getFriends, { loading: loadingFriends, error: errorFriends, data: dataFriends }] = useLazyQuery(GET_FRIENDS);
+  const [getFriends, { loading: loadingFriends, error: errorFriends, data: dataFriends, refetch: refetchFriends }] = useLazyQuery(GET_FRIENDS);
+  const [getAddFriend, {loading: loadingAddFriend, error: errorAddFriend, data: dataAddFriend}] = useMutation(ADD_FRIEND);
+  const [getRemoveFriend, {loading: loadingRemoveFriend, error: errorRemoveFriend, data: dataRemoveFriend}] = useMutation(REMOVE_FRIEND);
   const isEnteredPassword = loadingUser === false && dataUser != undefined;
   const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
   const isSignin = loadingAddUser == false && dataAddUser;
@@ -139,6 +160,40 @@ function InitialData() {
       getUserByPassword({ variables: { userName: uname.value, password: pass.value } });
     } else {
       setErrorMessages({ name: "wrongUsername", message: errors.wrongUsername });
+    }
+  }
+
+  const HandleAddFriend = (event) => {
+    event.preventDefault();
+    var { username } = document.forms[0];
+
+    const userData = data.getAllUserNames.find((user) => user === username.value);
+    if (userData) {
+      if (userData == dataUser.userIfCorrectPassword.userName) {
+        setErrorMessages({ name: "yourUsername", message: errors.yourUsername });
+      }
+      else {
+        getAddFriend({ variables: { id: dataUser.userIfCorrectPassword.id, username: username.value } });
+        setToReloadFriends(true);
+      }
+    }
+    else {
+      setErrorMessages({ name: "noSuchUser", message: errors.noSuchUser });
+    }
+  }
+
+  const HandleRemoveFriend = (event) => {
+    event.preventDefault();
+    var { username } = document.forms[1];
+    console.log(username.value);
+    const userData = dataFriends.getFriends.find((user) => user === username.value);
+    console.log(userData);
+    if (userData) {
+      getRemoveFriend({ variables: { id: dataUser.userIfCorrectPassword.id, username: username.value } });
+      setToReloadFriends(true);
+    }
+    else {
+      setErrorMessages({ name: "notYourFriend", message: errors.notYourFriend });
     }
   }
 
@@ -195,14 +250,38 @@ function InitialData() {
   );
 
   const renderFriendsComponent = (
-    <div className='FriendsList'>
+    <div key="friendList" className='friends-list'>
       <div>User is successfully logged in</div>
       <h3>Your Friends:</h3>
       {
-        (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map( name =>
+        (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map(name =>
           <p>{name}</p>
         )))
       }
+      <h3>Manage Your Friends</h3>
+      <div className="addFriendForm">
+        <form onSubmit={HandleAddFriend}>
+          <label>add user: </label>
+          <input type="text" name="username" required />
+          {renderErrorMessage("noSuchUser")}
+          {renderErrorMessage("yourUsername")}
+          <div className="button-container">
+            <input type="submit" />
+          </div>
+        </form>
+      </div>
+      <div className="removeFriendForm">
+        <form onSubmit={HandleRemoveFriend}>
+          <label>remove friend: </label>
+          <input type="text" name="username" required />
+          {renderErrorMessage("notYourFriend")}
+          <div className="button-container">
+            <input type="submit" />
+          </div>
+        </form>
+      </div>
+
+
     </div>
   );
 
@@ -216,6 +295,10 @@ function InitialData() {
     //console.log("login form");
     if (isEnteredPassword && !isEnteredCorrectPassword && errorMessages.name != "wrongPassword") setErrorMessages({ name: "wrongPassword", message: errors.wrongPassword })
     if (isEnteredPassword && isEnteredCorrectPassword && !loadingFriends && !dataFriends) getFriends({ variables: { id: dataUser.userIfCorrectPassword.id } });
+    if (toReloadFriends && ((dataAddFriend && dataAddFriend.addFriend) || (dataRemoveFriend && dataRemoveFriend.removeFriend))) {
+      setToReloadFriends(false);
+      refetchFriends({ variables: { id: dataUser.userIfCorrectPassword.id } });
+    }
     toReturn = (
       <div key="form" className="login-form">
         <div className="title">Log In</div>

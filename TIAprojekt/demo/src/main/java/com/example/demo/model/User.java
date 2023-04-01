@@ -49,8 +49,14 @@ public class User {
     public static User getById(int id){
         return users.get(id);
     }
+    public static User getByUsername(String userName){
+        return users.stream().filter(user -> user.userName.equals(userName)).findFirst().orElse(null);
+    }
 
     public String getUserName(){
         return userName;
+    }
+    public int getId(){
+        return id;
     }
 }
