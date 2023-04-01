@@ -43,7 +43,8 @@ query getUserIfCorrectPassword($userName: String!, $password: String!) {
   }
 }
 `;
-const ADD_USER = gql `
+
+const ADD_USER = gql`
 mutation getAddUser($userName: String!, $password: String!) {
   addUser(userName: $userName, password: $password){
     id
@@ -51,6 +52,12 @@ mutation getAddUser($userName: String!, $password: String!) {
     password
     isAdmin
   }
+}
+`;
+
+const GET_FRIENDS = gql`
+query getFriends($id: Int!) {
+  getFriends(id: $id)
 }
 `;
 
@@ -88,7 +95,8 @@ function InitialData() {
   const [errorMessages, setErrorMessages] = useState({});
   const { loading, error, data } = useQuery(GET_ALL_USERNAMES);
   const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
-  const [getAddUserData, {loading: loadingAddUser, error: errorAddUser, data: dataAddUser}] = useMutation(ADD_USER);
+  const [getAddUserData, { loading: loadingAddUser, error: errorAddUser, data: dataAddUser }] = useMutation(ADD_USER);
+  const [getFriends, { loading: loadingFriends, error: errorFriends, data: dataFriends }] = useLazyQuery(GET_FRIENDS);
   const isEnteredPassword = loadingUser === false && dataUser != undefined;
   const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
   const isSignin = loadingAddUser == false && dataAddUser;
@@ -98,7 +106,8 @@ function InitialData() {
   const HandleChangeLoginSigin = (event) => {
     //event.preventDefault();
     console.log("change form");
-    setIsLoginForm(!isLoginForm);
+    if (!isLoginForm) window.location.reload(false);
+    else setIsLoginForm(!isLoginForm);
   }
 
   const HandleSigninFormSubmit = (event) => {
@@ -106,15 +115,15 @@ function InitialData() {
     console.log(document.forms);
     var { uname, passOne, passTwo } = document.forms[0];
     const userData = data.getAllUserNames.find((user) => user === uname.value);
-    if(userData){
-      setErrorMessages({name: "usedUsername", message: errors.usedUsername });
+    if (userData) {
+      setErrorMessages({ name: "usedUsername", message: errors.usedUsername });
     }
-    else{
-      if (passOne.value === passTwo.value){
+    else {
+      if (passOne.value === passTwo.value) {
         getAddUserData({ variables: { userName: uname.value, password: passOne.value } });
       }
       else {
-        setErrorMessages({name: "differentControlPassword", message: errors.differentControlPassword});
+        setErrorMessages({ name: "differentControlPassword", message: errors.differentControlPassword });
       }
     }
   }
@@ -185,6 +194,18 @@ function InitialData() {
     </div>
   );
 
+  const renderFriendsComponent = (
+    <div className='FriendsList'>
+      <div>User is successfully logged in</div>
+      <h3>Your Friends:</h3>
+      {
+        (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map( name =>
+          <p>{name}</p>
+        )))
+      }
+    </div>
+  );
+
   //CODE
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
@@ -192,17 +213,18 @@ function InitialData() {
   let toReturn;
 
   if (isLoginForm) {
-    console.log("login form");
+    //console.log("login form");
     if (isEnteredPassword && !isEnteredCorrectPassword && errorMessages.name != "wrongPassword") setErrorMessages({ name: "wrongPassword", message: errors.wrongPassword })
+    if (isEnteredPassword && isEnteredCorrectPassword && !loadingFriends && !dataFriends) getFriends({ variables: { id: dataUser.userIfCorrectPassword.id } });
     toReturn = (
       <div key="form" className="login-form">
         <div className="title">Log In</div>
-        {(isEnteredPassword && isEnteredCorrectPassword) ? <div>User is successfully logged in</div> : (renderLoginForm)}
+        {(isEnteredPassword && isEnteredCorrectPassword) ? (renderFriendsComponent) : (renderLoginForm)}
       </div>
     )
   }
   else {
-    console.log("signin form");
+    //console.log("signin form");
     toReturn = (
       <div key="form" className="signin-form">
         <div className="title">Sign In</div>
@@ -213,7 +235,7 @@ function InitialData() {
 
   return [
     toReturn,
-    <Button key="changeFormButton" onClick = {() => HandleChangeLoginSigin()}>{(isLoginForm) ? (<>Sign in</>) : (<>Log in</>)}</Button>
+    <Button key="changeFormButton" onClick={(e) => HandleChangeLoginSigin(e)}>{(isLoginForm) ? (<>Sign in</>) : (<>Log in</>)}</Button>
   ]
 }
 

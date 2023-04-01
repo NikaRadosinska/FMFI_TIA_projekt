@@ -45,4 +45,12 @@ public class User {
         users.add(u);
         return u;
     }
+
+    public static User getById(int id){
+        return users.get(id);
+    }
+
+    public String getUserName(){
+        return userName;
+    }
 }
