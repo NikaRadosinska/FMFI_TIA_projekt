@@ -15,6 +15,7 @@ type Query {
     getAllUserNames: [String]
     userIfCorrectPassword(userName: String!, password: String!): User
     getFriends(id: Int!): [String]
+    getUsersGroups(id: Int!): [Group]
 }
 
 type Mutation {
