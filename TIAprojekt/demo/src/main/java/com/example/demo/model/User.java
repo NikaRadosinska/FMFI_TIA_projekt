@@ -1,21 +1,18 @@
 package com.example.demo.model;
 
-import org.springframework.graphql.data.method.annotation.Argument;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class User {
     private int id;
-    private String userName;
+    private String username;
     private String password;
     private Boolean isAdmin;
 
     public User(int id, String userName, String password, Boolean isAdmin){
         this.id = id;
-        this.userName = userName;
+        this.username = userName;
         this.password = password;
         this.isAdmin = isAdmin;
     }
@@ -27,11 +24,11 @@ public class User {
     ));
 
     public static List<String> getAllUserNames(){
-        return users.stream().map(user -> user.userName).toList();
+        return users.stream().map(user -> user.username).toList();
     }
 
     public static User userIfCorrectPassword(String userName, String password){
-        return users.stream().filter(user -> user.userName.equals(userName) &&  user.password.equals(password)).findFirst().orElse(null);
+        return users.stream().filter(user -> user.username.equals(userName) &&  user.password.equals(password)).findFirst().orElse(null);
     }
 
     public static User addUser(String userName, String password){
@@ -50,13 +47,17 @@ public class User {
         return users.get(id);
     }
     public static User getByUsername(String userName){
-        return users.stream().filter(user -> user.userName.equals(userName)).findFirst().orElse(null);
+        return users.stream().filter(user -> user.username.equals(userName)).findFirst().orElse(null);
     }
 
-    public String getUserName(){
-        return userName;
+    public String getUsername(){
+        return username;
     }
     public int getId(){
         return id;
+    }
+
+    public UserInfo getUserInfo(){
+        return new UserInfo(id, username);
     }
 }

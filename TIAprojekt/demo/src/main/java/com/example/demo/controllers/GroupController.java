@@ -17,4 +17,9 @@ public class GroupController {
     public List<Group> getUsersGroups(@Argument int id){
         return Member.getUsersGroups(id);
     }
+
+    @MutationMapping
+    public boolean createGroup(@Argument int id, @Argument String groupname){
+        return Group.createGroup(id, groupname);
+    }
 }

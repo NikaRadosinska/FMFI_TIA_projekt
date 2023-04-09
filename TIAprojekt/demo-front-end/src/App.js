@@ -7,6 +7,9 @@ import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Button from 'react-bootstrap/Button';
+import Nav from 'react-bootstrap/Nav';
+import Navbar from 'react-bootstrap/Navbar';
+import NavDropdown from 'react-bootstrap/NavDropdown';
 
 const initialState = {
   isLoading: true,
@@ -30,14 +33,14 @@ const GET_BOOK_ONE = gql`
 
 const GET_ALL_USERNAMES = gql`
 query allUsernames {
-  getAllUserNames
+  getAllUsernames
 }
 `;
 const GET_USER_IF_CORRECT_PASSWORD = gql`
-query getUserIfCorrectPassword($userName: String!, $password: String!) {
-  userIfCorrectPassword(userName: $userName, password: $password){
+query getUserIfCorrectPassword($username: String!, $password: String!) {
+  userIfCorrectPassword(username: $username, password: $password){
     id
-    userName
+    username
     password
     isAdmin
   }
@@ -45,10 +48,10 @@ query getUserIfCorrectPassword($userName: String!, $password: String!) {
 `;
 
 const ADD_USER = gql`
-mutation getAddUser($userName: String!, $password: String!) {
-  addUser(userName: $userName, password: $password){
+mutation getAddUser($username: String!, $password: String!) {
+  addUser(userName: $username, password: $password){
     id
-    userName
+    username
     password
     isAdmin
   }
@@ -57,7 +60,10 @@ mutation getAddUser($userName: String!, $password: String!) {
 
 const GET_FRIENDS = gql`
 query getFriends($id: Int!) {
-  getFriends(id: $id)
+  getFriends(id: $id){
+    id
+    username
+  }
 }
 `;
 
@@ -79,6 +85,12 @@ mutation addFriend($id: Int!, $username: String!) {
 const REMOVE_FRIEND = gql`
 mutation removeFriend($id: Int!, $username: String!) {
   removeFriend(id: $id, username: $username)
+}
+`;
+
+const CREATE_GROUP = gql`
+mutation createGroup($id: Int!, $groupname: String!) {
+  createGroup(id: $id, groupname: $groupname)
 }
 `;
 
@@ -115,13 +127,17 @@ function InitialData() {
     yourUsername: "you can not add yourself as a friend",
     notYourFriend: "user is not in your fiend list",
     alreadyYourFriend: "user is already your friend",
-    userAlreadyInGroup: "user is already in group"
+    userAlreadyInGroup: "user is already in group",
+    existingGroup: "group with such name already exists"
   };
 
   //STATES
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [toReloadFriends, setToReloadFriends] = useState(false);
+  const [toReloadGroups, setToReloadGroups] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
+  const [link, setLink] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState("");
   const { loading, error, data } = useQuery(GET_ALL_USERNAMES);
   const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
   const [getAddUserData, { loading: loadingAddUser, error: errorAddUser, data: dataAddUser }] = useMutation(ADD_USER);
@@ -142,11 +158,16 @@ function InitialData() {
     else setIsLoginForm(!isLoginForm);
   }
 
+  const HandleLogOut = (event) => {
+    window.location.reload(false);
+  }
+
   const HandleSigninFormSubmit = (event) => {
     event.preventDefault();
+    setErrorMessages({});
     console.log(document.forms);
     var { uname, passOne, passTwo } = document.forms[0];
-    const userData = data.getAllUserNames.find((user) => user === uname.value);
+    const userData = data.getAllUsernames.find((user) => user === uname.value);
     if (userData) {
       setErrorMessages({ name: "usedUsername", message: errors.usedUsername });
     }
@@ -162,13 +183,14 @@ function InitialData() {
 
   const HandleLoginFormSubmit = (event) => {
     event.preventDefault();
+    setErrorMessages({});
     var { uname, pass } = document.forms[0];
 
-    const userData = data.getAllUserNames.find((user) => user === uname.value);
+    const userData = data.getAllUsernames.find((user) => user === uname.value);
 
     if (userData) {
       console.log("Should be set" + uname.value + " " + pass.value);
-      getUserByPassword({ variables: { userName: uname.value, password: pass.value } });
+      getUserByPassword({ variables: { username: uname.value, password: pass.value } });
     } else {
       setErrorMessages({ name: "wrongUsername", message: errors.wrongUsername });
     }
@@ -176,14 +198,15 @@ function InitialData() {
 
   const HandleAddFriend = (event) => {
     event.preventDefault();
+    setErrorMessages({});
     var { username } = document.forms[0];
 
-    const userData = data.getAllUserNames.find((user) => user === username.value);
+    const userData = data.getAllUsernames.find((user) => user === username.value);
     if (userData) {
-      if (userData == dataUser.userIfCorrectPassword.userName) {
+      if (userData == dataUser.userIfCorrectPassword.username) {
         setErrorMessages({ name: "yourUsername", message: errors.yourUsername });
       }
-      else if (dataFriends.getFriends.find((user) => user === username.value)) {
+      else if (dataFriends.getFriends.find((user) => user.username === username.value)) {
         setErrorMessages({ name: "alreadyYourFriend", message: errors.alreadyYourFriend });
       }
       else {
@@ -196,18 +219,12 @@ function InitialData() {
     }
   }
 
-  const HandleAddUserToGroup = (event) => {
-    event.preventDefault();
-    var { group, username } = document.forms[2];
-
-    
-  }
-
   const HandleRemoveFriend = (event) => {
     event.preventDefault();
+    setErrorMessages({});
     var { username } = document.forms[1];
     console.log(username.value);
-    const userData = dataFriends.getFriends.find((user) => user === username.value);
+    const userData = dataFriends.getFriends.find((user) => user.username === username.value);
     console.log(userData);
     if (userData) {
       getRemoveFriend({ variables: { id: dataUser.userIfCorrectPassword.id, username: username.value } });
@@ -218,14 +235,49 @@ function InitialData() {
     }
   }
 
+  const HandleCreateGroup = (event) => {
+    event.preventDefault();
+    setErrorMessages({});
+  }
+
+  const HandleAddUserToGroup = (event) => {
+    event.preventDefault();
+    var { username } = document.forms[2];
+    setErrorMessages({});
+    
+  }
+
+  const HandleNavigation = (eventKey) => {
+    if (eventKey != "") {
+      console.log(eventKey);
+      setSelectedGroup("");
+      setLink(eventKey);
+    }
+  }
+
   //HTML RETURN_FUNCTIONS/VARIABLES
   const renderErrorMessage = (name) =>
     name === errorMessages.name && (
       <div className="error">{errorMessages.message}</div>
     );
 
+  const renderNav = (
+    <Navbar bg="dark" variant="dark" expand="md">
+      {/*<Navbar.Brand href="#home">React-Bootstrap</Navbar.Brand>*/}
+      <Navbar.Toggle aria-controls="basic-navbar-nav" />
+      <Navbar.Collapse id="basic-navbar-nav">
+        <Nav className="me-auto" variant="pills" defaultActiveKey={"recommendations"} onSelect={HandleNavigation}>
+          <Nav.Link eventKey={"recommendations"}>Recommendations</Nav.Link>
+          <Nav.Link eventKey={"friends"}>Friends</Nav.Link>
+          <Nav.Link eventKey={"groups"}>Groups</Nav.Link>
+        </Nav>
+      </Navbar.Collapse>
+    </Navbar>
+  )
+
   const renderLoginForm = (
-    <div className="LoginForm">
+    <div className="login-form">
+      <div className="title">Log In</div>
       <form onSubmit={HandleLoginFormSubmit}>
         {renderErrorMessage("waitForResponseAboutPassword")}
         <div className="input-container">
@@ -270,71 +322,125 @@ function InitialData() {
     </div>
   );
 
+  const renderRecommendations = (
+    <div className='part'>
+      Recommendations
+    </div>
+  )
+
+  const renderFriendsForms = (
+    <div className="bottomPanel">
+      <h4>Manage Your Friends</h4>
+      <div className="addFriendForm">
+        <form onSubmit={HandleAddFriend}>
+          <label>add user: </label>
+          <input type="text" name="username" required />
+          {renderErrorMessage("noSuchUser")}
+          {renderErrorMessage("yourUsername")}
+          {renderErrorMessage("alreadyYourFriend")}
+          <div className="button-container">
+            <input type="submit" />
+          </div>
+        </form>
+      </div>
+      <div className="removeFriendForm">
+        <form onSubmit={HandleRemoveFriend}>
+          <label>remove friend: </label>
+          <input type="text" name="username" required />
+          {renderErrorMessage("notYourFriend")}
+          <div className="button-container">
+            <input type="submit" />
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+
+  const renderFriends = (
+    <div className='part'>
+      <h3>Your Friends:</h3>
+      {
+        (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map(user =>
+          <p>{user.username}</p>
+        )))
+      }
+      {(!toReloadFriends && !loadingFriends && dataFriends && dataFriends.getFriends) ? (renderFriendsForms) : (<>Loading...</>)}
+    </div>
+  )
+
+  const renderAllGroups = (
+    <div>
+      <h3>Your Groups:</h3>
+      {
+        (loadingGroups || !dataGroups) ? (<p>Loading...</p>) : ((errorGroups) ? (<p>Error : {errorGroups.message}</p>) : (dataGroups.getUsersGroups.map(group =>
+          <Button className="groupButton" onClick={() => setSelectedGroup(group)}>{group.name}</Button>
+
+        )))
+      }
+    </div>
+  )
+
+  const renderSelectedGroup = (
+    <div>
+      <Button className="backToAllGroups" onClick={() => setSelectedGroup("")}>&#60; back to all groups</Button>
+
+    </div>
+  )
+
+  const renderCreateGroup = (
+    <div>
+      <h4>Create new group</h4>
+      <form onSubmit={HandleCreateGroup}>
+        <label>name of your new group: </label>
+        <input type="text" name="groupName" required />
+        {renderErrorMessage("existingGroup")}
+        <div className="button-container">
+          <input type="submit" />
+        </div>
+        <div className="button-container">
+          <input type="submit" />
+        </div>
+      </form>
+    </div>
+  )
+
+  const renderAddUserToGroup = (
+    <div>
+      <h4>Add User To {selectedGroup.name}</h4>
+      <div className="addUserToGroupForm">
+        <form onSubmit={HandleAddUserToGroup}>
+          <label>
+            Pick your friend:
+            <select name="friend">
+              {
+                (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map(user =>
+                  <option value={user.id}>{user.username}</option>
+                )))
+              }
+            </select>
+          </label>
+          <div className="button-container">
+            <input type="submit" />
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+
+  const renderGroups = (
+    <div className="part">
+      {(selectedGroup === "") ? (renderAllGroups) : (renderSelectedGroup)}
+      <div className="bottomPanel">
+        {(selectedGroup === "") ? (renderCreateGroup) : (renderAddUserToGroup)}
+      </div>
+    </div>
+  )
+
   const renderUserIsLoginComponent = (
     <div key="userIsLoginComponent" className="user-is-login">
-      <div>User is successfully logged in</div>
-      <div key="friendPart" className='friends-part'>
-        <h3>Your Friends:</h3>
-        {
-          (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map(name =>
-            <p>{name}</p>
-          )))
-        }
-        <h4>Manage Your Friends</h4>
-        <div className="addFriendForm">
-          <form onSubmit={HandleAddFriend}>
-            <label>add user: </label>
-            <input type="text" name="username" required />
-            {renderErrorMessage("noSuchUser")}
-            {renderErrorMessage("yourUsername")}
-            {renderErrorMessage("alreadyYourFriend")}
-            <div className="button-container">
-              <input type="submit" />
-            </div>
-          </form>
-        </div>
-        <div className="removeFriendForm">
-          <form onSubmit={HandleRemoveFriend}>
-            <label>remove friend: </label>
-            <input type="text" name="username" required />
-            {renderErrorMessage("notYourFriend")}
-            <div className="button-container">
-              <input type="submit" />
-            </div>
-          </form>
-        </div>
-      </div>
-      <p></p>
-      <div key="groupPart" className="group-part">
-        <h3>Your Groups:</h3>
-        {
-          (loadingGroups || !dataGroups) ? (<p>Loading...</p>) : ((errorGroups) ? (<p>Error : {errorGroups.message}</p>) : (dataGroups.getUsersGroups.map(group =>
-            <p>{group.name}</p>
-          )))
-        }
-        <h4>Add User To Yours Group</h4>
-        <div className="addUserToGroupForm">
-          <form onSubmit={HandleAddUserToGroup}>
-            <label>
-              Pick your group:
-              <select name="group">
-                {
-                  (loadingGroups || !dataGroups) ? (<p>Loading...</p>) : ((errorGroups) ? (<p>Error : {errorGroups.message}</p>) : (dataGroups.getUsersGroups.map(group =>
-                    <option value={group.name}>{group.name}</option>
-                  )))
-                }
-              </select>
-            </label>
-            <label> user: </label>
-            <input type="text" name="username" required />
-            {renderErrorMessage("noSuchUser")}
-            {renderErrorMessage("userAlreadyInGroup")}
-            <div className="button-container">
-              <input type="submit" />
-            </div>
-          </form>
-        </div>
-      </div>
+      {(link === "" || link === "recommendations")
+        ? (renderRecommendations)
+        : ((link === "friends") ? (renderFriends) : (renderGroups))}
     </div>
   );
 
@@ -353,13 +459,13 @@ function InitialData() {
       getFriends({ variables: { id: dataUser.userIfCorrectPassword.id } });
       getGroups({ variables: { id: dataUser.userIfCorrectPassword.id } });
     }
-    if (toReloadFriends && ((dataAddFriend && dataAddFriend.addFriend) || (dataRemoveFriend && dataRemoveFriend.removeFriend))) {
-      setToReloadFriends(false);
+    if (toReloadFriends && !loadingAddFriend && !loadingRemoveFriend) {
+      console.log("reload friends");
       refetchFriends({ id: dataUser.userIfCorrectPassword.id });
+      setToReloadFriends(false);
     }
     toReturn = (
-      <div key="form" className="login-form">
-        <div className="title">Log In</div>
+      <div>
         {(isEnteredPassword && isEnteredCorrectPassword) ? (renderUserIsLoginComponent) : (renderLoginForm)}
       </div>
     )
@@ -367,67 +473,33 @@ function InitialData() {
   else {
     //console.log("signin form");
     toReturn = (
-      <div key="form" className="signin-form">
+      <div className="signin-form">
         <div className="title">Sign In</div>
         {(isSignin) ? <div>User is successfully signed in</div> : (renderSigninForm)}
       </div>
     )
   }
 
-  return [
-    toReturn,
-    <p></p>,
-    <Button key="changeFormButton" onClick={(e) => HandleChangeLoginSigin(e)}>{(isLoginForm) ? (<>Sign in</>) : (<>Log in</>)}</Button>
-  ]
+  return (
+    <div className="app">
+      <Container fluid className="upperPanel">
+        <Row>
+          <Col>{(isEnteredPassword && isEnteredCorrectPassword) ? (renderNav) : (<>Need to login</>)}</Col>
+          <Col xs="auto" className="buttonHolder">
+            {(isEnteredPassword && isEnteredCorrectPassword)
+              ? (<Button className="logOutButton" onClick={(e) => HandleLogOut(e)}>Log out</Button>)
+              : (<Button className="changeFormButton" onClick={(e) => HandleChangeLoginSigin(e)}>{(isLoginForm) ? (<>Sign in</>) : (<>Log in</>)}</Button>)}
+          </Col>
+        </Row>
+      </Container>
+      <div className="mainPanel">{toReturn}</div>
+    </div>
+  )
 }
 
 const App = () => {
-  {/*const [data, setData] = useState(initialState)
-
-  const getData = async () => {
-    const response = await fetch('/api/songs');
-    const body = await response.json()
-    setData({ songs: body, isLoading: false })
-  }
-
-  useEffect(() => {
-    getData()
-  }, [])*/}
-
-
-
-  {/*
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <Container>
-        
-          <div className="App-intro">
-          <h2 style={{color: 'white'}}>Song List</h2>
-          <hr></hr>
-          <Row>
-          {data.songs.map(song =>
-              <Col>
-                 <SongCard key={song.id} song={song} />
-              </Col>
-           
-          )}
-          </Row>
-        </div>
-          
-      </Container>
-        
-      </header>
-      <div>
-        <h2>My first Apollo app 🚀</h2>
-        <br/>
-        <DisplayBook />
-      </div>
-      */}
-
   return (
-    <div className="App">
-      <InitialData />
-    </div>
+    <InitialData />
   )
 }
 export default App;

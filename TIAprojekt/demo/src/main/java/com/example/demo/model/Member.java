@@ -22,4 +22,10 @@ public class Member {
     public static List<Group> getUsersGroups(int userId){
         return members.stream().filter(member -> member.user == userId).map(member -> Group.getById(member.groupID)).toList();
     }
+
+    public static boolean addUserToGroup(int userid, int groupid){
+        if (members.stream().anyMatch(m -> m.user == userid && m.groupID == groupid)) return false;
+        members.add(new Member(groupid, userid));
+        return true;
+    }
 }

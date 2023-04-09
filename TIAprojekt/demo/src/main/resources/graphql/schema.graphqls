@@ -12,25 +12,32 @@ type Author {
 type Query {
     bookById(id: ID!): Book
 
-    getAllUserNames: [String]
-    userIfCorrectPassword(userName: String!, password: String!): User
-    getFriends(id: Int!): [String]
+    getAllUsernames: [String]
+    userIfCorrectPassword(username: String!, password: String!): User
+    getFriends(id: Int!): [UserInfo]
     getUsersGroups(id: Int!): [Group]
 }
 
 type Mutation {
-    addUser(userName: String!, password: String!): User
-    addAdmin(userName: String!, password: String!): User
+    addUser(username: String!, password: String!): User
+    addAdmin(username: String!, password: String!): User
 
     addFriend(id: Int!, username: String!): Boolean
     removeFriend(id: Int!, username: String!): Boolean
+
+    createGroup(id: Int!, groupname: String!): Boolean
 }
 
 type User {
     id: ID!
-    userName: String!
+    username: String!
     password: String!
     isAdmin: Boolean!
+}
+
+type UserInfo {
+    id: ID!
+    username: String!
 }
 
 type Group {

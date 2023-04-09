@@ -26,8 +26,9 @@ public class Friends {
         return id2;
     }
 
-    public static List<String> getFriendsUsernames(int id){
-        return friends.stream().filter(friends -> friends.id1 == id || friends.id2 == id).map(friends -> (friends.id1 == id) ? (friends.id2) : (friends.id1)).map(userId -> User.getById(userId).getUserName()).toList();
+    public static List<UserInfo> getFriendsUsernames(int id){
+
+        return friends.stream().filter(pair -> pair.id1 == id || pair.id2 == id).map(pair2 -> (pair2.id1 == id) ? (pair2.id2) : (pair2.id1)).map(userId -> User.getById(userId).getUserInfo()).toList();
     }
 
     public static boolean addFriend(int id, String username){

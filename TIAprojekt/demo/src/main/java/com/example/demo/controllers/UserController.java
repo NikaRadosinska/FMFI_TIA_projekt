@@ -14,23 +14,23 @@ import java.util.*;
 @Controller
 public class UserController {
     @QueryMapping
-    public List<String> getAllUserNames(){
+    public List<String> getAllUsernames(){
         return User.getAllUserNames();
     }
 
     @QueryMapping
-    public User userIfCorrectPassword(@Argument String userName, @Argument String password){
-        return User.userIfCorrectPassword(userName, password);
+    public User userIfCorrectPassword(@Argument String username, @Argument String password){
+        return User.userIfCorrectPassword(username, password);
     }
 
     @MutationMapping
-    public User addUser(@Argument String userName, @Argument String password){
-        return User.addUser(userName,password);
+    public User addUser(@Argument String username, @Argument String password){
+        return User.addUser(username,password);
     }
 
     @MutationMapping
-    public User addAdmin(@Argument String userName, @Argument String password){
-        return User.addAdmin(userName,password);
+    public User addAdmin(@Argument String username, @Argument String password){
+        return User.addAdmin(username,password);
     }
 
 }

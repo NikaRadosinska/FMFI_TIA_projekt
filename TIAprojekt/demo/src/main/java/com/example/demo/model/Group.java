@@ -21,4 +21,13 @@ public class Group {
     public static Group getById(int id){
         return groups.get(id);
     }
+
+    public static boolean createGroup(int id, String groupname){
+        if (groups.stream().anyMatch(g -> g.name.equals(groupname))) return false;
+
+        Group ng = new Group(groups.size(), groupname);
+        groups.add(ng);
+        Member.addUserToGroup(id, ng.id);
+        return true;
+    }
 }

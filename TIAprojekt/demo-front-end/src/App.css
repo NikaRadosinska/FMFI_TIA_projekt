@@ -1,19 +1,5 @@
-.App {
-  text-align: center;
-}
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
+.app-header {
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
@@ -23,27 +9,17 @@
   font-size: calc(10px + 2vmin);
 }
 
-.App-link {
+.app-link {
   color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .app {
   font-family: sans-serif;
-  display: flex;
-  align-items: center;
+  display: block;
+  align-items: start;
   justify-content: center;
   flex-direction: column;
   gap: 20px;
-  height: 100vh;
   font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
   background-color: #f8f9fd;
 }
@@ -79,6 +55,12 @@ input[type="submit"]:hover {
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
+.signin-form {
+  background-color: white;
+  padding: 2rem;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
 .list-container {
   display: flex;
 }
@@ -99,3 +81,46 @@ input[type="submit"]:hover {
   gap: 8px;
   margin: 10px;
 }
+
+.upperPanel {
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #282c34;
+  position: sticky;
+  top: 0px;
+  width: 100%;
+  color: white;
+}
+
+.mainPanel {
+  align-items: center;
+  justify-content: center;
+  top: 70px;
+  width: 100%;
+  height: 100%;
+}
+
+.changeFormButton {
+  height: 100%;
+}
+
+.nav-link {
+  color:white
+}
+
+.nav-link:active {
+  color:black;
+}
+
+.part {
+  width: 100%;
+}
+
+.bottomPanel {
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
+  background-color: #282c34;
+  color: white;
+}
+
