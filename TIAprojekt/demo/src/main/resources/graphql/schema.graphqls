@@ -26,6 +26,7 @@ type Mutation {
     removeFriend(id: Int!, username: String!): Boolean
 
     createGroup(id: Int!, groupname: String!): Boolean
+    leaveGroup(userid: Int!, groupid: Int!): Boolean
 }
 
 type User {

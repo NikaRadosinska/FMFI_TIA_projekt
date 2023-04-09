@@ -22,4 +22,8 @@ public class GroupController {
     public boolean createGroup(@Argument int id, @Argument String groupname){
         return Group.createGroup(id, groupname);
     }
+    @MutationMapping
+    public boolean leaveGroup(@Argument int userid, @Argument int groupid){
+        return Member.leaveGroup(userid, groupid);
+    }
 }

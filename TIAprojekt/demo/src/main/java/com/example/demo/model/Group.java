@@ -19,15 +19,19 @@ public class Group {
     ));
 
     public static Group getById(int id){
-        return groups.get(id);
+        return groups.stream().filter(group -> group.id == id).findFirst().get();
     }
 
     public static boolean createGroup(int id, String groupname){
         if (groups.stream().anyMatch(g -> g.name.equals(groupname))) return false;
 
-        Group ng = new Group(groups.size(), groupname);
+        Group ng = new Group(groups.get(groups.size()-1).id + 1, groupname);
         groups.add(ng);
         Member.addUserToGroup(id, ng.id);
         return true;
+    }
+
+    public static boolean deleteGroup(int id){
+        return groups.removeIf(group -> group.id == id);
     }
 }

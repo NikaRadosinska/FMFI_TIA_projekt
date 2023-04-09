@@ -28,4 +28,10 @@ public class Member {
         members.add(new Member(groupid, userid));
         return true;
     }
+
+    public static boolean leaveGroup(int userid, int groupid){
+        boolean ret = members.removeIf(m -> m.groupID == groupid && m.user == userid);
+        if(members.stream().noneMatch(m -> m.groupID == groupid)) Group.deleteGroup(groupid);
+        return ret;
+    }
 }

@@ -94,6 +94,12 @@ mutation createGroup($id: Int!, $groupname: String!) {
 }
 `;
 
+const LEAVE_GROUP = gql`
+mutation leaveGroup($userid: Int!, $groupid: Int!) {
+  leaveGroup(userid: $userid, groupid: $groupid)
+}
+`;
+
 
 
 function DisplayBook() {
@@ -135,6 +141,7 @@ function InitialData() {
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [toReloadFriends, setToReloadFriends] = useState(false);
   const [toReloadGroups, setToReloadGroups] = useState(false);
+  const [leftGroup, setLeftGroup] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
   const [link, setLink] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("");
@@ -146,6 +153,7 @@ function InitialData() {
   const [getAddFriend, { loading: loadingAddFriend, error: errorAddFriend, data: dataAddFriend }] = useMutation(ADD_FRIEND);
   const [getRemoveFriend, { loading: loadingRemoveFriend, error: errorRemoveFriend, data: dataRemoveFriend }] = useMutation(REMOVE_FRIEND);
   const [getCreateGroup, { loading: loadingCreateGroup, error: errorCreateGroup, data: dataCreateGroup }] = useMutation(CREATE_GROUP);
+  const [getLeaveGroup, { loading: loadingLeaveGroup, error: errorLeaveGroup, data: dataLeaveGroup }] = useMutation(LEAVE_GROUP);
   const isEnteredPassword = loadingUser === false && dataUser != undefined;
   const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
   const isSignin = loadingAddUser == false && dataAddUser;
@@ -243,6 +251,15 @@ function InitialData() {
     var { groupname } = document.forms[0];
     getCreateGroup({variables: {id: dataUser.userIfCorrectPassword.id, groupname: groupname.value}});
     setToReloadGroups(true);
+  }
+
+  const HandleLeaveGroup = (event) => {
+    event.preventDefault();
+    setErrorMessages({});
+    getLeaveGroup({variables: { userid: dataUser.userIfCorrectPassword.id, groupid: selectedGroup.id } });
+    setSelectedGroup("");
+    setToReloadGroups(true);
+    setLeftGroup(true);
   }
 
   const HandleAddUserToGroup = (event) => {
@@ -387,6 +404,7 @@ function InitialData() {
   const renderSelectedGroup = (
     <div>
       <Button className="backToAllGroups" onClick={() => setSelectedGroup("")}>&#60; back to all groups</Button>
+      <Button className="leaveGroup" onClick={HandleLeaveGroup}>Leave group</Button>
     </div>
   )
 
@@ -464,9 +482,13 @@ function InitialData() {
       refetchFriends({ id: dataUser.userIfCorrectPassword.id });
       setToReloadFriends(false);
     }
-    if(toReloadGroups && !loadingCreateGroup){
+    if(toReloadGroups && !loadingCreateGroup && !loadingLeaveGroup){
       setToReloadGroups(false);
-      if (dataCreateGroup.createGroup) refetchGroups({ variables: { id: dataUser.userIfCorrectPassword.id } });
+
+      if ((dataCreateGroup && dataCreateGroup.createGroup) || (leftGroup)) {
+        refetchGroups({ variables: { id: dataUser.userIfCorrectPassword.id } });
+        if(leftGroup) setLeftGroup(false);
+      }
       else setErrorMessages({ name: "existingGroup", message: errors.existingGroup });
     }
     toReturn = (
