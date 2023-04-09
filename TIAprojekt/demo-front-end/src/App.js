@@ -142,9 +142,10 @@ function InitialData() {
   const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
   const [getAddUserData, { loading: loadingAddUser, error: errorAddUser, data: dataAddUser }] = useMutation(ADD_USER);
   const [getFriends, { loading: loadingFriends, error: errorFriends, data: dataFriends, refetch: refetchFriends }] = useLazyQuery(GET_FRIENDS);
-  const [getGroups, { loading: loadingGroups, error: errorGroups, data: dataGroups }] = useLazyQuery(GET_GROUPS);
+  const [getGroups, { loading: loadingGroups, error: errorGroups, data: dataGroups, refetch: refetchGroups }] = useLazyQuery(GET_GROUPS);
   const [getAddFriend, { loading: loadingAddFriend, error: errorAddFriend, data: dataAddFriend }] = useMutation(ADD_FRIEND);
   const [getRemoveFriend, { loading: loadingRemoveFriend, error: errorRemoveFriend, data: dataRemoveFriend }] = useMutation(REMOVE_FRIEND);
+  const [getCreateGroup, { loading: loadingCreateGroup, error: errorCreateGroup, data: dataCreateGroup }] = useMutation(CREATE_GROUP);
   const isEnteredPassword = loadingUser === false && dataUser != undefined;
   const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
   const isSignin = loadingAddUser == false && dataAddUser;
@@ -238,13 +239,17 @@ function InitialData() {
   const HandleCreateGroup = (event) => {
     event.preventDefault();
     setErrorMessages({});
+
+    var { groupname } = document.forms[0];
+    getCreateGroup({variables: {id: dataUser.userIfCorrectPassword.id, groupname: groupname.value}});
+    setToReloadGroups(true);
   }
 
   const HandleAddUserToGroup = (event) => {
     event.preventDefault();
-    var { username } = document.forms[2];
+    var { username } = document.forms[0];
     setErrorMessages({});
-    
+
   }
 
   const HandleNavigation = (eventKey) => {
@@ -374,7 +379,6 @@ function InitialData() {
       {
         (loadingGroups || !dataGroups) ? (<p>Loading...</p>) : ((errorGroups) ? (<p>Error : {errorGroups.message}</p>) : (dataGroups.getUsersGroups.map(group =>
           <Button className="groupButton" onClick={() => setSelectedGroup(group)}>{group.name}</Button>
-
         )))
       }
     </div>
@@ -383,7 +387,6 @@ function InitialData() {
   const renderSelectedGroup = (
     <div>
       <Button className="backToAllGroups" onClick={() => setSelectedGroup("")}>&#60; back to all groups</Button>
-
     </div>
   )
 
@@ -392,11 +395,8 @@ function InitialData() {
       <h4>Create new group</h4>
       <form onSubmit={HandleCreateGroup}>
         <label>name of your new group: </label>
-        <input type="text" name="groupName" required />
+        <input type="text" name="groupname" required />
         {renderErrorMessage("existingGroup")}
-        <div className="button-container">
-          <input type="submit" />
-        </div>
         <div className="button-container">
           <input type="submit" />
         </div>
@@ -463,6 +463,11 @@ function InitialData() {
       console.log("reload friends");
       refetchFriends({ id: dataUser.userIfCorrectPassword.id });
       setToReloadFriends(false);
+    }
+    if(toReloadGroups && !loadingCreateGroup){
+      setToReloadGroups(false);
+      if (dataCreateGroup.createGroup) refetchGroups({ variables: { id: dataUser.userIfCorrectPassword.id } });
+      else setErrorMessages({ name: "existingGroup", message: errors.existingGroup });
     }
     toReturn = (
       <div>
