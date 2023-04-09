@@ -1,0 +1,11 @@
+1. Nikola Radošinská
+2. Odporúčací systém na hry a filmy.
+3. 3.-9.4.2023
+4. tvorba skupín
+5. 756c1a5 - len som si potrebovala zmeniť počítač na ktorom pracujem a mala som niečo rozrobené
+   269ddb3 - rozdelenie na "stránky" a spravenie navigácie k tomu
+   8d98ed4 - možnosť vytvorenia skupiny
+   82e56cd - možnosť odísť zo skupiny
+6. minule som chcela ešte robiť aj pridávanie priateľov do skupiny ale hranie sa s tou layoutovou časťou stránky mi zabralo veľa času lebo som skúšala všeličo
+7. pridávanie priateľov do skupín, vytváranie, odosielanie a zobrazovanie odporúčaní
+8. neboli problémy
