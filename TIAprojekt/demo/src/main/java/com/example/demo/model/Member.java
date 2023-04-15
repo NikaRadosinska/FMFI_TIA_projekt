@@ -34,4 +34,8 @@ public class Member {
         if(members.stream().noneMatch(m -> m.groupID == groupid)) Group.deleteGroup(groupid);
         return ret;
     }
+
+    public static List<UserInfo> getMembersOfGroup(int groupID){
+        return members.stream().filter(m -> m.groupID == groupID).map(m -> User.getById(m.user).getUserInfo()).toList();
+    }
 }

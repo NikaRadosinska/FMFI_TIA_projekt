@@ -100,6 +100,22 @@ mutation leaveGroup($userid: Int!, $groupid: Int!) {
 }
 `;
 
+const GET_GROUP_MEMBERS = gql`
+query getMembersOfGroup($id: Int!) {
+  getMembersOfGroup(id: $id){
+    id
+    username
+  }
+}
+`;
+
+const ADD_USER_TO_GROUP = gql`
+mutation addUserToGroup($userid: Int!, $groupid: Int!) {
+  addUserToGroup(userid: $userid, groupid: $groupid)
+}
+`;
+
+
 
 
 function DisplayBook() {
@@ -134,7 +150,8 @@ function InitialData() {
     notYourFriend: "user is not in your fiend list",
     alreadyYourFriend: "user is already your friend",
     userAlreadyInGroup: "user is already in group",
-    existingGroup: "group with such name already exists"
+    existingGroup: "group with such name already exists",
+    alreadyInGroup: "this friend is already part of the group"
   };
 
   //STATES
@@ -150,10 +167,14 @@ function InitialData() {
   const [getAddUserData, { loading: loadingAddUser, error: errorAddUser, data: dataAddUser }] = useMutation(ADD_USER);
   const [getFriends, { loading: loadingFriends, error: errorFriends, data: dataFriends, refetch: refetchFriends }] = useLazyQuery(GET_FRIENDS);
   const [getGroups, { loading: loadingGroups, error: errorGroups, data: dataGroups, refetch: refetchGroups }] = useLazyQuery(GET_GROUPS);
+  //const [getRecommendations, {loading: loadingRecommendations, error: errorRecommendations, data: dataRecommendations, refetch: refetchRecommendations}] = useLazyQuery()
   const [getAddFriend, { loading: loadingAddFriend, error: errorAddFriend, data: dataAddFriend }] = useMutation(ADD_FRIEND);
   const [getRemoveFriend, { loading: loadingRemoveFriend, error: errorRemoveFriend, data: dataRemoveFriend }] = useMutation(REMOVE_FRIEND);
   const [getCreateGroup, { loading: loadingCreateGroup, error: errorCreateGroup, data: dataCreateGroup }] = useMutation(CREATE_GROUP);
   const [getLeaveGroup, { loading: loadingLeaveGroup, error: errorLeaveGroup, data: dataLeaveGroup }] = useMutation(LEAVE_GROUP);
+  const [getGroupsMembers, { loading: loadingGroupsMembers, error: errorGroupsMembers, data: dataGroupsMembers, refetch: refetchGroupsMembers }] = useLazyQuery(GET_GROUP_MEMBERS);
+  const [fetchedGroupMembersName, setFetchedGroupMembersName] = useState("");
+  const [getAddUserToGroup, { loading: loadingAddUserToGroup, error: errorAddUserToGroup, data: dataAddUserToGroup }] = useMutation(ADD_USER_TO_GROUP);
   const isEnteredPassword = loadingUser === false && dataUser != undefined;
   const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
   const isSignin = loadingAddUser == false && dataAddUser;
@@ -249,14 +270,14 @@ function InitialData() {
     setErrorMessages({});
 
     var { groupname } = document.forms[0];
-    getCreateGroup({variables: {id: dataUser.userIfCorrectPassword.id, groupname: groupname.value}});
+    getCreateGroup({ variables: { id: dataUser.userIfCorrectPassword.id, groupname: groupname.value } });
     setToReloadGroups(true);
   }
 
   const HandleLeaveGroup = (event) => {
     event.preventDefault();
     setErrorMessages({});
-    getLeaveGroup({variables: { userid: dataUser.userIfCorrectPassword.id, groupid: selectedGroup.id } });
+    getLeaveGroup({ variables: { userid: dataUser.userIfCorrectPassword.id, groupid: selectedGroup.id } });
     setSelectedGroup("");
     setToReloadGroups(true);
     setLeftGroup(true);
@@ -266,7 +287,9 @@ function InitialData() {
     event.preventDefault();
     var { username } = document.forms[0];
     setErrorMessages({});
-
+    if (dataGroupsMembers.getMembersOfGroup.map(userInfo => userInfo.username).contains(username)){
+      setErrorMessages({ name: "alreadyInGroup", message: errors.alreadyInGroup })
+    }
   }
 
   const HandleNavigation = (eventKey) => {
@@ -393,11 +416,13 @@ function InitialData() {
   const renderAllGroups = (
     <div>
       <h3>Your Groups:</h3>
-      {
-        (loadingGroups || !dataGroups) ? (<p>Loading...</p>) : ((errorGroups) ? (<p>Error : {errorGroups.message}</p>) : (dataGroups.getUsersGroups.map(group =>
-          <Button className="groupButton" onClick={() => setSelectedGroup(group)}>{group.name}</Button>
-        )))
-      }
+      <div>
+        {
+          (loadingGroups || !dataGroups) ? (<p>Loading...</p>) : ((errorGroups) ? (<p>Error : {errorGroups.message}</p>) : (dataGroups.getUsersGroups.map(group =>
+            <Button className="groupButton" onClick={() => setSelectedGroup(group)}>{group.name}</Button>
+          )))
+        }
+      </div>
     </div>
   )
 
@@ -405,6 +430,14 @@ function InitialData() {
     <div>
       <Button className="backToAllGroups" onClick={() => setSelectedGroup("")}>&#60; back to all groups</Button>
       <Button className="leaveGroup" onClick={HandleLeaveGroup}>Leave group</Button>
+      <h3>Group: {selectedGroup.name}</h3>
+      <div>
+        {
+          (loadingGroupsMembers || !dataGroupsMembers) ? (<p>Loading...</p>) : ((errorGroupsMembers) ? (<p>Error: {errorGroupsMembers.message}</p>) : (dataGroupsMembers.getMembersOfGroup.map(member =>
+            <p>{member.name}</p>
+          )))
+        }
+      </div>
     </div>
   )
 
@@ -437,6 +470,7 @@ function InitialData() {
               }
             </select>
           </label>
+          {renderErrorMessage("alreadyInGroup")}
           <div className="button-container">
             <input type="submit" />
           </div>
@@ -482,14 +516,20 @@ function InitialData() {
       refetchFriends({ id: dataUser.userIfCorrectPassword.id });
       setToReloadFriends(false);
     }
-    if(toReloadGroups && !loadingCreateGroup && !loadingLeaveGroup){
+    if (toReloadGroups && !loadingCreateGroup && !loadingLeaveGroup) {
       setToReloadGroups(false);
 
       if ((dataCreateGroup && dataCreateGroup.createGroup) || (leftGroup)) {
         refetchGroups({ variables: { id: dataUser.userIfCorrectPassword.id } });
-        if(leftGroup) setLeftGroup(false);
+        if (leftGroup) setLeftGroup(false);
       }
       else setErrorMessages({ name: "existingGroup", message: errors.existingGroup });
+    }
+    if (selectedGroup != "" && fetchedGroupMembersName != selectedGroup.name) {
+      setFetchedGroupMembersName(selectedGroup.name);
+      console.log()
+      if (dataGroupsMembers) refetchGroupsMembers({ variables: { id: selectedGroup.id } });
+      else getGroupsMembers({ variables: { id: selectedGroup.id } });
     }
     toReturn = (
       <div>

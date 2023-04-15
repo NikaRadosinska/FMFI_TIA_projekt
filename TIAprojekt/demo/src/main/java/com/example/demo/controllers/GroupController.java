@@ -18,6 +18,16 @@ public class GroupController {
         return Member.getUsersGroups(id);
     }
 
+    @QueryMapping
+    public List<UserInfo> getMembersOfGroup(@Argument int id){
+        return Member.getMembersOfGroup(id);
+    }
+
+    @MutationMapping
+    public boolean addUserToGroup(@Argument int userid, @Argument int groupid){
+        return Member.addUserToGroup(userid, groupid);
+    }
+
     @MutationMapping
     public boolean createGroup(@Argument int id, @Argument String groupname){
         return Group.createGroup(id, groupname);
@@ -26,4 +36,6 @@ public class GroupController {
     public boolean leaveGroup(@Argument int userid, @Argument int groupid){
         return Member.leaveGroup(userid, groupid);
     }
+
+
 }

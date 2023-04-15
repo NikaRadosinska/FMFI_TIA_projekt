@@ -1,3 +1,11 @@
+scalar Date
+scalar LocalDate
+scalar LocalDateTime
+scalar LocalTime
+scalar OffsetDateTime
+scalar YearMonth
+scalar Duration
+
 type Book {
     id: ID
     name: String
@@ -16,6 +24,8 @@ type Query {
     userIfCorrectPassword(username: String!, password: String!): User
     getFriends(id: Int!): [UserInfo]
     getUsersGroups(id: Int!): [Group]
+    getMembersOfGroup(id: Int!): [UserInfo]
+    getUsersRecommendations(userId: Int!): [Recommendation]
 }
 
 type Mutation {
@@ -27,6 +37,8 @@ type Mutation {
 
     createGroup(id: Int!, groupname: String!): Boolean
     leaveGroup(userid: Int!, groupid: Int!): Boolean
+
+    addUserToGroup(userid: Int!, groupid: Int!): Boolean
 }
 
 type User {
@@ -58,10 +70,15 @@ type Member {
 
 type Recommendation {
     id: ID!
-    sender: User!
+    sender: UserInfo!
+    group: Group
+    receiver: UserInfo
     title: String!
     description: String
     rating: Int!
+    gameAddition: GameAddition
+    postTime: LocalDateTime!
+    genres: [Genre]!
 }
 
 type Genre {
@@ -69,25 +86,9 @@ type Genre {
     name: String!
 }
 
-type RecommendationsGenre {
-    recommendation: Recommendation!
-    genre: Genre!
-}
-
 type GameAddition {
-    recommendation: Recommendation!
-    playedTime: Float
-    overallTime: Float
-}
-
-type RecommendationForGroup {
-    recommendation: Recommendation!
-    group: Group!
-}
-
-type RecommendationForFriend{
-    recommendation: Recommendation!
-    receiver: User!
+    playedTime: Duration!
+    overallTime: Duration
 }
 
 enum FeedbackerState {

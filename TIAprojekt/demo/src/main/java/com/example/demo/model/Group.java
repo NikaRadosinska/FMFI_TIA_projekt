@@ -18,6 +18,10 @@ public class Group {
             new Group(1,"userOneGroup")
     ));
 
+    public int getId(){
+        return id;
+    }
+
     public static Group getById(int id){
         return groups.stream().filter(group -> group.id == id).findFirst().get();
     }
