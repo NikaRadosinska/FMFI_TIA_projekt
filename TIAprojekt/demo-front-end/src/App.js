@@ -76,6 +76,37 @@ query getUsersGroups($id: Int!) {
 }
 `;
 
+const GET_RECOMMENDATIONS = gql`
+query getUsersRecommendations($id: Int!) {
+  getUsersRecommendations(id: $id){
+    id
+    sender{
+      id
+      username
+    }
+    group{
+      id
+      name
+    }
+    receiver{
+      id
+      username
+    }
+    title
+    description
+    rating
+    gameAddition{
+      progress
+    }
+    postTime
+    genres{
+      id
+      name
+    }
+  }
+}
+`;
+
 const ADD_FRIEND = gql`
 mutation addFriend($id: Int!, $username: String!) {
   addFriend(id: $id, username: $username)
@@ -162,12 +193,13 @@ function InitialData() {
   const [errorMessages, setErrorMessages] = useState({});
   const [link, setLink] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("");
+  const [toCreateRecommendation, setToCreateRecommendation] = useState(false);
   const { loading, error, data } = useQuery(GET_ALL_USERNAMES);
   const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
   const [getAddUserData, { loading: loadingAddUser, error: errorAddUser, data: dataAddUser }] = useMutation(ADD_USER);
   const [getFriends, { loading: loadingFriends, error: errorFriends, data: dataFriends, refetch: refetchFriends }] = useLazyQuery(GET_FRIENDS);
   const [getGroups, { loading: loadingGroups, error: errorGroups, data: dataGroups, refetch: refetchGroups }] = useLazyQuery(GET_GROUPS);
-  //const [getRecommendations, {loading: loadingRecommendations, error: errorRecommendations, data: dataRecommendations, refetch: refetchRecommendations}] = useLazyQuery()
+  const [getRecommendations, { loading: loadingRecommendations, error: errorRecommendations, data: dataRecommendations, refetch: refetchRecommendations }] = useLazyQuery(GET_RECOMMENDATIONS);
   const [getAddFriend, { loading: loadingAddFriend, error: errorAddFriend, data: dataAddFriend }] = useMutation(ADD_FRIEND);
   const [getRemoveFriend, { loading: loadingRemoveFriend, error: errorRemoveFriend, data: dataRemoveFriend }] = useMutation(REMOVE_FRIEND);
   const [getCreateGroup, { loading: loadingCreateGroup, error: errorCreateGroup, data: dataCreateGroup }] = useMutation(CREATE_GROUP);
@@ -372,9 +404,36 @@ function InitialData() {
     </div>
   );
 
+  const renderCreateRecommendation = (
+    <div>
+
+    </div>
+  )
+
+  const renderShowRecommendations = (
+    <div>
+      <h3>Recommendations:</h3>
+      {
+        (loadingRecommendations || !dataRecommendations) ? (<p>Loading...</p>) : ((errorRecommendations) ? (<p>Error : {errorRecommendations.message}</p>) : (dataRecommendations.getUsersRecommendations.map(rec =>
+          <div>
+            <h5>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</h5>
+            {(rec.description) ? (<p>Description: {rec.description}</p>) : (<></>)}
+            <p>From: {(rec.group) ? (<>{rec.group} ({rec.sender.username})</>) : (<>{rec.sender.username}</>)}</p>
+            <p>Sender rating: {rec.rating}/10</p>
+            {(rec.gameAddition) ? (<p>Percentage of played: {rec.gameAddition.progress}</p>) : (<></>)}
+            <p>Genres: {rec.genres.map(genre => <> {genre.name}</>)}</p>
+          </div>
+        )))
+      }
+    </div>
+  )
+
   const renderRecommendations = (
     <div className='part'>
-      Recommendations
+      {(toCreateRecommendation) ? (renderCreateRecommendation) : (renderShowRecommendations)}
+      <div className="bottomPanel">
+        <Button className="recommendationButton" onClick={() => setToCreateRecommendation(!toCreateRecommendation)}>{(toCreateRecommendation) ? (<>Back to Recommendations</>) : (<>Create NEW Recommendation</>)}</Button>
+      </div>
     </div>
   )
 
@@ -515,6 +574,7 @@ function InitialData() {
     if (isEnteredPassword && isEnteredCorrectPassword && !loadingFriends && !dataFriends) {
       getFriends({ variables: { id: dataUser.userIfCorrectPassword.id } });
       getGroups({ variables: { id: dataUser.userIfCorrectPassword.id } });
+      getRecommendations({ variables: { id: dataUser.userIfCorrectPassword.id } });
     }
     if (toReloadFriends && !loadingAddFriend && !loadingRemoveFriend) {
       console.log("reload friends");

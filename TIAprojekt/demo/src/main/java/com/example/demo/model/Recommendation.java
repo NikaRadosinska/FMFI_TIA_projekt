@@ -54,7 +54,7 @@ public class Recommendation {
 
     public static List<Recommendation> getUsersRecommendations(int userId){
         List<Integer> groups =  Member.getUsersGroups(userId).stream().map(Group::getId).toList();
-        List<Recommendation> recs = new java.util.ArrayList<>(recommendations.stream().filter(rec -> (rec.group != null && groups.contains(rec.group)) || (rec.receiver != null && rec.receiver == userId)).toList());
+        List<Recommendation> recs = new java.util.ArrayList<>(recommendations.stream().filter(rec -> (rec.group != null && groups.contains(rec.group)) || (rec.receiver != null && rec.receiver == userId) || (rec.sender == userId)).toList());
         recs.sort(Comparator.comparing(o -> o.postTime));
         return recs;
     }

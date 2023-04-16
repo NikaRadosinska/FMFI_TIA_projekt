@@ -25,7 +25,7 @@ type Query {
     getFriends(id: Int!): [UserInfo]
     getUsersGroups(id: Int!): [Group]
     getMembersOfGroup(id: Int!): [UserInfo]
-    getUsersRecommendations(userId: Int!): [Recommendation]
+    getUsersRecommendations(id: Int!): [Recommendation]
 }
 
 type Mutation {
@@ -87,8 +87,7 @@ type Genre {
 }
 
 type GameAddition {
-    playedTime: Duration!
-    overallTime: Duration
+    progress: Float!
 }
 
 enum FeedbackerState {

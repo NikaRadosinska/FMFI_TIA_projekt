@@ -12,8 +12,8 @@ import java.util.List;
 public class RecommendationController {
 
     @QueryMapping
-    public List<Recommendation> getUsersRecommendations(@Argument int userId){
-        return Recommendation.getUsersRecommendations(userId);
+    public List<Recommendation> getUsersRecommendations(@Argument int id){
+        return Recommendation.getUsersRecommendations(id);
     }
 
     @SchemaMapping
