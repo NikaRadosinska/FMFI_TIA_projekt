@@ -1,0 +1,10 @@
+1. Nikola Radošinská
+2. Odporúčací systém na hry a filmy.
+3. 10.-16.4.2023
+4. vytváranie a odosielanie odporúčaní
+5. 4f05a48 - do javi som pridávala triedy a funkcie pre to aby som mohla poslať všetky recommendations a aby sa mohli zobraziť tí, ktorý patria do určitej skupiny a pridávať kamaráti do skupiny
+   eb30370 - zobrazovanie ludí čo patria do skupiny a formúlár pridanie kamaráta do skupiny
+   999fd63 - zobrazovanie recommendations a preklikávanie na formulár ktorý ešte nieje hotoví
+6. chcela som ešte implementovať formulár na vytváranie recommendation, ale mala som písomku a svadbu tento týždeň, čiže to som už nestihla 
+7. do bety ešte urobit formulár na vytváranie recommendation a potom dávanie feedbacku
+8. niesom si istá či nemám nejaké bad practices čo sa toho frontendu týka, lepím to tak ako to nájdem niekde v podobných príkladocha väčšina vecí sa dá robiť x rôznymi spôsobmi
