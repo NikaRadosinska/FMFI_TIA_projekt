@@ -219,7 +219,6 @@ function InitialData() {
     const userData = data.getAllUsernames.find((user) => user === uname.value);
 
     if (userData) {
-      console.log("Should be set" + uname.value + " " + pass.value);
       getUserByPassword({ variables: { username: uname.value, password: pass.value } });
     } else {
       setErrorMessages({ name: "wrongUsername", message: errors.wrongUsername });
@@ -285,16 +284,22 @@ function InitialData() {
 
   const HandleAddUserToGroup = (event) => {
     event.preventDefault();
-    var { username } = document.forms[0];
+    var friendId = document.getElementById("addFriendToThisGroupSelect").value;
+    console.log(dataGroupsMembers.getMembersOfGroup);
     setErrorMessages({});
-    if (dataGroupsMembers.getMembersOfGroup.map(userInfo => userInfo.username).contains(username)){
+    if (dataGroupsMembers.getMembersOfGroup.find(userInfo => userInfo.id == friendId)) {
       setErrorMessages({ name: "alreadyInGroup", message: errors.alreadyInGroup })
+    }
+    else {
+      getAddUserToGroup({ variables: { userid: friendId, groupid: selectedGroup.id } });
+      setFetchedGroupMembersName("");
     }
   }
 
   const HandleNavigation = (eventKey) => {
     if (eventKey != "") {
-      console.log(eventKey);
+      //console.log(eventKey);
+      setErrorMessages({});
       setSelectedGroup("");
       setLink(eventKey);
     }
@@ -434,7 +439,7 @@ function InitialData() {
       <div>
         {
           (loadingGroupsMembers || !dataGroupsMembers) ? (<p>Loading...</p>) : ((errorGroupsMembers) ? (<p>Error: {errorGroupsMembers.message}</p>) : (dataGroupsMembers.getMembersOfGroup.map(member =>
-            <p>{member.name}</p>
+            <p>{member.username}</p>
           )))
         }
       </div>
@@ -462,7 +467,7 @@ function InitialData() {
         <form onSubmit={HandleAddUserToGroup}>
           <label>
             Pick your friend:
-            <select name="friend">
+            <select id="addFriendToThisGroupSelect">
               {
                 (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map(user =>
                   <option value={user.id}>{user.username}</option>
@@ -483,7 +488,7 @@ function InitialData() {
     <div className="part">
       {(selectedGroup === "") ? (renderAllGroups) : (renderSelectedGroup)}
       <div className="bottomPanel">
-        {(selectedGroup === "") ? (renderCreateGroup) : (renderAddUserToGroup)}
+        {(selectedGroup === "") ? (renderCreateGroup) : ((loadingAddUserToGroup) ? (<></>) : (renderAddUserToGroup))}
       </div>
     </div>
   )
@@ -525,10 +530,9 @@ function InitialData() {
       }
       else setErrorMessages({ name: "existingGroup", message: errors.existingGroup });
     }
-    if (selectedGroup != "" && fetchedGroupMembersName != selectedGroup.name) {
+    if (selectedGroup != "" && fetchedGroupMembersName != selectedGroup.name && !loadingAddUserToGroup) {
       setFetchedGroupMembersName(selectedGroup.name);
-      console.log()
-      if (dataGroupsMembers) refetchGroupsMembers({ variables: { id: selectedGroup.id } });
+      if (dataGroupsMembers) refetchGroupsMembers({ id: selectedGroup.id });
       else getGroupsMembers({ variables: { id: selectedGroup.id } });
     }
     toReturn = (
