@@ -1,8 +1,10 @@
 package com.example.demo.model;
 
+import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.lang.Nullable;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -35,7 +37,11 @@ public class Recommendation {
         return genres;
     }
 
-    public Recommendation(int id, int sender, @Nullable Integer group,@Nullable Integer receiver, String title,@Nullable String description, int rating,@Nullable GameAddition gameAddition, List<Integer> genres){
+    public boolean isForFilm(){
+        return gameAddition == null;
+    }
+
+    public Recommendation(int id, int sender, @Nullable Integer group,@Nullable Integer receiver, String title,@Nullable String description, int rating, @Nullable GameAddition gameAddition, List<Integer> genres){
         this.id = id;
         this.sender = sender;
         this.group = group;
@@ -48,9 +54,9 @@ public class Recommendation {
         this.genres = genres;
     }
 
-    private static List<Recommendation> recommendations = Arrays.asList(
-            new Recommendation(0, 0, null, 1, "Simsonovci", null, 4, null, Arrays.asList(4,23,28))
-    );
+    private static List<Recommendation> recommendations = new ArrayList<>(Arrays.asList(
+            new Recommendation(0, 0, null, 1, "Simsonovci", null, 6, null, Arrays.asList(4,23,28))
+    ));
 
     public static List<Recommendation> getUsersRecommendations(int userId){
         List<Integer> groups =  Member.getUsersGroups(userId).stream().map(Group::getId).toList();
@@ -59,4 +65,8 @@ public class Recommendation {
         return recs;
     }
 
+    public static boolean createRecommendation(int sender, Integer groupid, Integer receiver, String title, String description, int rating, Float progress, List<Integer> genresids){
+        Recommendation rec = new Recommendation(recommendations.get(recommendations.size()-1).id + 1, sender, groupid, receiver, title, description, rating, (progress != null) ? (new GameAddition(progress)) : (null), genresids);
+        return recommendations.add(rec);
+    }
 }

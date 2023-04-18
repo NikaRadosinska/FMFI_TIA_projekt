@@ -26,6 +26,9 @@ type Query {
     getUsersGroups(id: Int!): [Group]
     getMembersOfGroup(id: Int!): [UserInfo]
     getUsersRecommendations(id: Int!): [Recommendation]
+
+    getFilmGenres: [FilmGenre]
+    getGameGenres: [GameGenre]
 }
 
 type Mutation {
@@ -39,6 +42,8 @@ type Mutation {
     leaveGroup(userid: Int!, groupid: Int!): Boolean
 
     addUserToGroup(userid: Int!, groupid: Int!): Boolean
+
+    createRecommendation(sender: Int!, groupid: Int, receiver: Int, title: String!, description: String, rating: Int!, progress: Float, genresids: [Int]!): Boolean
 }
 
 type User {
@@ -57,6 +62,7 @@ type Group {
     id: ID!
     name: String!
 }
+
 
 type Friend {
     userOne: User!
@@ -81,7 +87,22 @@ type Recommendation {
     genres: [Genre]!
 }
 
-type Genre {
+interface IGenre {
+    id: ID!
+    name: String!
+}
+
+type GameGenre implements IGenre{
+    id: ID!
+    name: String!
+}
+
+type FilmGenre implements IGenre{
+    id: ID!
+    name: String!
+}
+
+type Genre implements IGenre{
     id: ID!
     name: String!
 }

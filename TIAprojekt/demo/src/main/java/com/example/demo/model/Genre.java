@@ -12,7 +12,7 @@ public class Genre {
         this.name = name;
     }
 
-    private static List<Genre> genres = Arrays.asList(
+    private static List<Genre> filmGenres = Arrays.asList(
             new Genre(0, "Horror"),
             new Genre(1,"Action"),
             new Genre(2,"Thriller"),
@@ -44,7 +44,43 @@ public class Genre {
             new Genre(28,"Family")
     );
 
-    public static List<Genre> getGenres(List<Integer> genresIds) {
-        return genres.stream().filter(genre -> genresIds.contains(genre.id)).toList();
+
+    private static List<Genre> gameGenres = Arrays.asList(
+            new Genre(0, "Action"),
+            new Genre(1, "Fighting"),
+            new Genre(2, "Platform"),
+            new Genre(3, "Shooter"),
+            new Genre(4, "Survival"),
+            new Genre(5, "Battle royale"),
+            new Genre(6, "Action-Adventure"),
+            new Genre(7, "Stealth"),
+            new Genre(8, "Interactive movie"),
+            new Genre(9, "Visual novel"),
+            new Genre(10, "Horror"),
+            new Genre(11, "Role-Playing"),
+            new Genre(12, "Sci-fi"),
+            new Genre(13, "Simulation"),
+            new Genre(14, "Sport"),
+            new Genre(15, "Vehicle"),
+            new Genre(16, "Strategy"),
+            new Genre(17, "Real-time"),
+            new Genre(18, "Turn-based"),
+            new Genre(19, "Racing")
+    );
+
+    public static List<Genre> getFilmGenres(){
+        return filmGenres;
+    }
+
+    public static List<Genre> getGameGenres(){
+        return gameGenres;
+    }
+
+    public static List<Genre> getFilmGenres(List<Integer> genresIds) {
+        return filmGenres.stream().filter(genre -> genresIds.contains(genre.id)).toList();
+    }
+
+    public static List<Genre> getGameGenres(List<Integer> genresIds){
+        return gameGenres.stream().filter(genre -> genresIds.contains(genre.id)).toList();
     }
 }

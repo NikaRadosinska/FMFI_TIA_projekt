@@ -10,6 +10,7 @@ import Button from 'react-bootstrap/Button';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import NavDropdown from 'react-bootstrap/NavDropdown';
+import Select from 'react-select';
 
 const initialState = {
   isLoading: true,
@@ -36,6 +37,25 @@ query allUsernames {
   getAllUsernames
 }
 `;
+
+const GET_FILM_GENRES = gql`
+query getFilmGenres {
+  getFilmGenres{
+    id
+    name
+  }
+}
+`;
+
+const GET_GAME_GENRES = gql`
+query getGameGenres {
+  getGameGenres{
+    id
+    name
+  }
+}
+`;
+
 const GET_USER_IF_CORRECT_PASSWORD = gql`
 query getUserIfCorrectPassword($username: String!, $password: String!) {
   userIfCorrectPassword(username: $username, password: $password){
@@ -146,25 +166,12 @@ mutation addUserToGroup($userid: Int!, $groupid: Int!) {
 }
 `;
 
-
-
-
-function DisplayBook() {
-  const { loading, error, data } = useQuery(GET_BOOK_ONE);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error : {error.message}</p>;
-  console.log(data.bookById);
-  return (
-    <div key={data.bookById.id}>
-      <h3>{data.bookById.name}</h3>
-      <br />
-      <b>About this book:</b>
-      <p>page count:{data.bookById.pageCount}, author: {data.bookById.author.firstName} {data.bookById.author.lastName}</p>
-      <br />
-    </div>
-  );
+const CREATE_RECOMMENDATION = gql`
+mutation createRecommendation($userid: Int!, $groupid: Int, $receiver: Int, $title: String!, $description: String, $rating: Int!, $progress: Float, $genresids: [Int]!) {
+  createRecommendation(sender: $userid, groupid: $groupid, receiver: $receiver, title: $title, description: $description, rating: $rating, progress: $progress, genresids: $genresids)
 }
+`;
+
 
 
 function InitialData() {
@@ -182,19 +189,24 @@ function InitialData() {
     alreadyYourFriend: "user is already your friend",
     userAlreadyInGroup: "user is already in group",
     existingGroup: "group with such name already exists",
-    alreadyInGroup: "this friend is already part of the group"
+    alreadyInGroup: "this friend is already part of the group",
+    atLeastOne: "you need to select at least one friend or group"
   };
 
   //STATES
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [toReloadFriends, setToReloadFriends] = useState(false);
   const [toReloadGroups, setToReloadGroups] = useState(false);
+  const [toReloadRecommendations, setToReloadRecommendations] = useState(false);
   const [leftGroup, setLeftGroup] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
   const [link, setLink] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("");
   const [toCreateRecommendation, setToCreateRecommendation] = useState(false);
+  const [recommendationForFilm, setRecommendationForFilm] = useState(true);
   const { loading, error, data } = useQuery(GET_ALL_USERNAMES);
+  const { loading: loadingFilmGenres, error: errorFilmGenres, data: dataFilmGenres } = useQuery(GET_FILM_GENRES, { queryKey: ['filmGenres'] });
+  const { loading: loadingGameGenres, error: errorGameGenres, data: dataGameGenres } = useQuery(GET_GAME_GENRES, { queryKey: ['gameGenres'] });
   const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
   const [getAddUserData, { loading: loadingAddUser, error: errorAddUser, data: dataAddUser }] = useMutation(ADD_USER);
   const [getFriends, { loading: loadingFriends, error: errorFriends, data: dataFriends, refetch: refetchFriends }] = useLazyQuery(GET_FRIENDS);
@@ -207,6 +219,7 @@ function InitialData() {
   const [getGroupsMembers, { loading: loadingGroupsMembers, error: errorGroupsMembers, data: dataGroupsMembers, refetch: refetchGroupsMembers }] = useLazyQuery(GET_GROUP_MEMBERS);
   const [fetchedGroupMembersName, setFetchedGroupMembersName] = useState("");
   const [getAddUserToGroup, { loading: loadingAddUserToGroup, error: errorAddUserToGroup, data: dataAddUserToGroup }] = useMutation(ADD_USER_TO_GROUP);
+  const [getCreateRecommendation, { loading: loadingCreateRecommendation, error: errorCreateRecommendation, data: dataCreateRecommendation }] = useMutation(CREATE_RECOMMENDATION);
   const isEnteredPassword = loadingUser === false && dataUser != undefined;
   const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
   const isSignin = loadingAddUser == false && dataAddUser;
@@ -320,7 +333,7 @@ function InitialData() {
     console.log(dataGroupsMembers.getMembersOfGroup);
     setErrorMessages({});
     if (dataGroupsMembers.getMembersOfGroup.find(userInfo => userInfo.id == friendId)) {
-      setErrorMessages({ name: "alreadyInGroup", message: errors.alreadyInGroup })
+      setErrorMessages({ name: "alreadyInGroup", message: errors.alreadyInGroup });
     }
     else {
       getAddUserToGroup({ variables: { userid: friendId, groupid: selectedGroup.id } });
@@ -334,6 +347,52 @@ function InitialData() {
       setErrorMessages({});
       setSelectedGroup("");
       setLink(eventKey);
+    }
+  }
+
+  const [selectedGroups, setSelectedGroups] = useState([]);
+  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [selectedRating, setSelectedRating] = useState();
+
+  const onGroupsChange = (selectedOptions) => setSelectedGroups(selectedOptions);
+  const onFriendsChange = (selectedOptions) => setSelectedFriends(selectedOptions);
+  const onGenresChange = (selectedOptions) => { setSelectedGenres(selectedOptions); console.log(selectedOptions); }
+  const onRatingChange = (selectedOption) => { setSelectedRating(selectedOption); console.log(selectedOption); }
+
+  const HandleCreateRecommendation = (event) => {
+    event.preventDefault();
+    var { title, description, progress } = document.forms[0];
+
+    if (selectedGroups.length + selectedFriends.length <= 0) {
+      setErrorMessages({ name: "atLeastOne", message: errors.atLeastOne });
+    } else {
+      selectedFriends.forEach(element => {
+        getCreateRecommendation({
+          variables: {
+            userid: dataUser.userIfCorrectPassword.id,
+            receiver: element.value,
+            title: title.value,
+            description: description.value,
+            rating: selectedRating.value,
+            progress: (progress) ? (progress.value / 100) : (null),
+            genresids: selectedGenres.map(genre => genre.value)
+          }
+        });
+      })
+      selectedGroups.forEach(element => {
+        getCreateRecommendation({
+          variables: {
+            userid: dataUser.userIfCorrectPassword.id,
+            groupid: element.value,
+            title: title.value,
+            description: description.value,
+            rating: selectedRating.value,
+            progress: (progress) ? (progress.value / 100) : (null),
+            genresids: selectedGenres.map(genre => genre.value)
+          }
+        });
+      })
     }
   }
 
@@ -406,22 +465,81 @@ function InitialData() {
 
   const renderCreateRecommendation = (
     <div>
-
+      <h3>Create Recommendation</h3>
+      <Button className="recommendationButton" onClick={() => { setRecommendationForFilm(!recommendationForFilm); setSelectedGenres(); }}>{(recommendationForFilm) ? (<>Show form for game</>) : (<>Show form for movie</>)}</Button>
+      <form id='createRecommendationForm' onSubmit={HandleCreateRecommendation}>
+        {/*<div>
+          <label>For Groups:</label>
+          <Select isMulti onChange={onGroupsChange} options={(dataGroups) ? (dataGroups.getUsersGroups.map(group => ({ value: group.id, label: group.name }))) : (<></>)} />
+        </div>}*/}
+        <div>
+          <label>For Friends:</label>
+          <Select isMulti onChange={onFriendsChange} options={(dataFriends) ? (dataFriends.getFriends.map(friend => ({ value: friend.id, label: friend.username }))) : (<></>)} />
+        </div>
+        {renderErrorMessage("atLeastOne")}
+        <div className="input-container">
+          <label>Title </label>
+          <input type="text" name="title" required />
+        </div>
+        <div className="input-container">
+          <label>Description </label>
+          <textarea name="description"></textarea>
+        </div>
+        <div>
+          <label>Your rating </label>
+          <Select id="rating" required onChange={onRatingChange} options={[
+            { value: 0, label: 0 },
+            { value: 1, label: 1 },
+            { value: 2, label: 2 },
+            { value: 3, label: 3 },
+            { value: 4, label: 4 },
+            { value: 5, label: 5 },
+            { value: 6, label: 6 },
+            { value: 7, label: 7 },
+            { value: 8, label: 8 },
+            { value: 9, label: 9 },
+            { value: 10, label: 10 }
+          ]} />
+        </div>
+        {
+          (recommendationForFilm) ? (<></>) : (<div>
+            <label>Your progress (%)</label>
+            <input type="number" name="progress" min="1" max="100" required />
+          </div>)
+        }
+        <div>
+          <label>Genres:</label>
+          {
+            (recommendationForFilm) ? (
+              <Select key="filmGenresSelect" isMulti required onChange={onGenresChange} closeMenuOnSelect={false} options={(dataFilmGenres && !loadingFilmGenres) ? (dataFilmGenres.getFilmGenres.map(genre => ({ value: genre.id, label: genre.name }))) : (<></>)} />
+            ) : (
+              <Select key="gameGenresSelect" isMulti required onChange={onGenresChange} closeMenuOnSelect={false} options={(dataGameGenres && !loadingGameGenres) ? (dataGameGenres.getGameGenres.map(genre => ({ value: genre.id, label: genre.name }))) : (<></>)} />
+            )
+          }
+        </div>
+        <div className="button-container">
+          <input type="submit" />
+        </div>
+      </form>
     </div>
   )
 
   const renderShowRecommendations = (
     <div>
       <h3>Recommendations:</h3>
+      <Button onClick={() => setToReloadRecommendations(true)}>Reload Recommendations</Button>
       {
         (loadingRecommendations || !dataRecommendations) ? (<p>Loading...</p>) : ((errorRecommendations) ? (<p>Error : {errorRecommendations.message}</p>) : (dataRecommendations.getUsersRecommendations.map(rec =>
           <div>
+            <p></p>
             <h5>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</h5>
             {(rec.description) ? (<p>Description: {rec.description}</p>) : (<></>)}
-            <p>From: {(rec.group) ? (<>{rec.group} ({rec.sender.username})</>) : (<>{rec.sender.username}</>)}</p>
+            <p>From: {(rec.group) ? (<>{rec.group.name} ({rec.sender.username})</>) : (<>{rec.sender.username}</>)}</p>
+            <p>To: {(rec.group) ? (rec.group.name) : (rec.receiver.username)}</p>
             <p>Sender rating: {rec.rating}/10</p>
-            {(rec.gameAddition) ? (<p>Percentage of played: {rec.gameAddition.progress}</p>) : (<></>)}
+            {(rec.gameAddition) ? (<p>Percentage of played: {rec.gameAddition.progress * 100}</p>) : (<></>)}
             <p>Genres: {rec.genres.map(genre => <> {genre.name}</>)}</p>
+            <p></p>
           </div>
         )))
       }
@@ -565,7 +683,6 @@ function InitialData() {
   //CODE
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
-
   let toReturn;
 
   if (isLoginForm) {
@@ -589,6 +706,10 @@ function InitialData() {
         if (leftGroup) setLeftGroup(false);
       }
       else setErrorMessages({ name: "existingGroup", message: errors.existingGroup });
+    }
+    if (toReloadRecommendations) {
+      setToReloadRecommendations(false);
+      refetchRecommendations({ id: dataUser.userIfCorrectPassword.id });
     }
     if (selectedGroup != "" && fetchedGroupMembersName != selectedGroup.name && !loadingAddUserToGroup) {
       setFetchedGroupMembersName(selectedGroup.name);
