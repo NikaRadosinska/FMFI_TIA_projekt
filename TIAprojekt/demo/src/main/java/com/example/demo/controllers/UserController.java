@@ -8,9 +8,11 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import com.example.demo.model.User;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.*;
 
+@CrossOrigin(maxAge = 3600)
 @Controller
 public class UserController {
     @QueryMapping

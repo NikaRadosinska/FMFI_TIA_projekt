@@ -6,10 +6,11 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import javax.swing.*;
 import java.util.*;
-
+@CrossOrigin(maxAge = 3600)
 @Controller
 public class GroupController {
 
