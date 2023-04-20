@@ -7,7 +7,7 @@ import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.css';
 
 const client = new ApolloClient({
-  uri: 'http://localhost:3000/graphql',
+  uri: 'https://recommendationsbackend.onrender.com/graphql',
   cache: new InMemoryCache(),
 });
 
