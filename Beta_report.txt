@@ -1,7 +1,7 @@
 1. Nikola Radošinská
 2. Odporúčací systém na hry a filmy.
 3. https://github.com/NikaRadosinska/FMFI_TIA_projekt/tree/Beta_report
-4. doplním
+4. https://recommendationsfrontend.onrender.com
 5. používam kombináciu Spring(Java), React a Grapql Appolo, na rozbehanie som použila tieto tutoriály
    Spring + React: https://javascript.plainenglish.io/how-to-setup-spring-mvc-with-react-ce2cc422a7e0
    Graphql in Spring: https://www.baeldung.com/spring-graphql
