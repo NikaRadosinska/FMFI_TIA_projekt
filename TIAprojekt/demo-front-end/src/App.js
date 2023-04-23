@@ -69,7 +69,7 @@ query getUserIfCorrectPassword($username: String!, $password: String!) {
 
 const ADD_USER = gql`
 mutation getAddUser($username: String!, $password: String!) {
-  addUser(userName: $username, password: $password){
+  addUser(username: $username, password: $password){
     id
     username
     password
@@ -248,7 +248,7 @@ function InitialData() {
     }
     else {
       if (passOne.value === passTwo.value) {
-        getAddUserData({ variables: { userName: uname.value, password: passOne.value } });
+        getAddUserData({ variables: { username: uname.value, password: passOne.value } });
       }
       else {
         setErrorMessages({ name: "differentControlPassword", message: errors.differentControlPassword });
