@@ -23,6 +23,13 @@ public class RecommendationController {
         return Recommendation.createRecommendation(sender, groupid, receiver, title, description, rating, progress, genresids);
     }
 
+    @MutationMapping
+    public boolean createFeedback(@Argument int recommendationId, @Argument int userId, @Argument FeedbackerState state, @Argument int rating, @Argument String commentary){
+        int feedbackId = Feedback.createFeedback(userId, state, rating, commentary);
+        Recommendation.addFeedback(recommendationId, feedbackId);
+        return true;
+    }
+
     @QueryMapping
     public List<Genre> getFilmGenres(){
         return Genre.getFilmGenres();
@@ -47,6 +54,14 @@ public class RecommendationController {
     @SchemaMapping
     public List<Genre> genres(Recommendation recommendation) {
         return recommendation.isForFilm() ? Genre.getFilmGenres(recommendation.getGenres()) : Genre.getGameGenres(recommendation.getGenres());
+    }
+    @SchemaMapping
+    public List<Feedback> feedbacks(Recommendation recommendation) {
+        return Feedback.getFeedbacks(recommendation.getFeedbacks());
+    }
+    @SchemaMapping
+    public UserInfo user(Feedback feedback) {
+        return User.getById(feedback.getUserId()).getUserInfo();
     }
 
 }

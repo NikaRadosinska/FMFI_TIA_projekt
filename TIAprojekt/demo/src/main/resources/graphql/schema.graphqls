@@ -44,6 +44,7 @@ type Mutation {
     addUserToGroup(userid: Int!, groupid: Int!): Boolean
 
     createRecommendation(sender: Int!, groupid: Int, receiver: Int, title: String!, description: String, rating: Int!, progress: Float, genresids: [Int]!): Boolean
+    createFeedback(recommendationId: Int!, userId: Int!, state: FeedbackerState!, rating: Int!, commentary: String): Boolean
 }
 
 type User {
@@ -85,6 +86,7 @@ type Recommendation {
     gameAddition: GameAddition
     postTime: LocalDateTime!
     genres: [Genre]!
+    feedbacks: [Feedback]
 }
 
 interface IGenre {
@@ -119,8 +121,7 @@ enum FeedbackerState {
 
 type Feedback {
     id: ID!
-    user: User!
-    recommendation: Recommendation!
+    user: UserInfo!
     state: FeedbackerState!
     rating: Int!
     commentary: String
