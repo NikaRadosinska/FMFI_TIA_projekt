@@ -131,7 +131,7 @@ query getUsersRecommendations($id: Int!) {
       }
       state
       rating
-      state
+      commentary
     }
   }
 }
@@ -179,6 +179,12 @@ mutation addUserToGroup($userid: Int!, $groupid: Int!) {
 const CREATE_RECOMMENDATION = gql`
 mutation createRecommendation($userid: Int!, $groupid: Int, $receiver: Int, $title: String!, $description: String, $rating: Int!, $progress: Float, $genresids: [Int]!) {
   createRecommendation(sender: $userid, groupid: $groupid, receiver: $receiver, title: $title, description: $description, rating: $rating, progress: $progress, genresids: $genresids)
+}
+`;
+
+const CREATE_FEEDBACK = gql`
+mutation createFeedback($recommendationId: Int!, $userId: Int!, $state: FeedbackerState!, $rating: Int!, $commentary: String) {
+  createFeedback(recommendationId: $recommendationId, userId: $userId, state: $state, rating: $rating, commentary: $commentary)
 }
 `;
 
@@ -230,6 +236,7 @@ function InitialData() {
   const [fetchedGroupMembersName, setFetchedGroupMembersName] = useState("");
   const [getAddUserToGroup, { loading: loadingAddUserToGroup, error: errorAddUserToGroup, data: dataAddUserToGroup }] = useMutation(ADD_USER_TO_GROUP);
   const [getCreateRecommendation, { loading: loadingCreateRecommendation, error: errorCreateRecommendation, data: dataCreateRecommendation }] = useMutation(CREATE_RECOMMENDATION);
+  const [getCreateFeedback, { loading: loadingCreateFeedback, error: errorCreateFeedback, data: dataCreateFeedback }] = useMutation(CREATE_FEEDBACK);
   const isEnteredPassword = loadingUser === false && dataUser != undefined;
   const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
   const isSignin = loadingAddUser == false && dataAddUser;
@@ -367,8 +374,8 @@ function InitialData() {
 
   const onGroupsChange = (selectedOptions) => setSelectedGroups(selectedOptions);
   const onFriendsChange = (selectedOptions) => setSelectedFriends(selectedOptions);
-  const onGenresChange = (selectedOptions) => { setSelectedGenres(selectedOptions); console.log(selectedOptions); }
-  const onRatingChange = (selectedOption) => { setSelectedRating(selectedOption); console.log(selectedOption); }
+  const onGenresChange = (selectedOptions) => { setSelectedGenres(selectedOptions); }
+  const onRatingChange = (selectedOption) => { setSelectedRating(selectedOption); }
 
   const HandleCreateRecommendation = (event) => {
     event.preventDefault();
@@ -404,6 +411,24 @@ function InitialData() {
         });
       })
     }
+  }
+
+  const HandleCreateFeedback = (event) => {
+    event.preventDefault();
+    var { commentary } = document.forms[0];
+    getCreateFeedback({
+      variables: {
+        recommendationId: recToFeedback,
+        userId: dataUser.userIfCorrectPassword.id,
+        state: feedbackersState.value,
+        rating: myRating.value,
+        commentary: commentary.value
+      }
+    });
+    setFeedbackersState();
+    setMyRating();
+    setRecToFeedback();
+    setToReloadRecommendations(true);
   }
 
   //HTML RETURN_FUNCTIONS/VARIABLES
@@ -478,10 +503,10 @@ function InitialData() {
       <h3>Create Recommendation</h3>
       <Button className="recommendationButton" onClick={() => { setRecommendationForFilm(!recommendationForFilm); setSelectedGenres(); }}>{(recommendationForFilm) ? (<>Show form for game</>) : (<>Show form for movie</>)}</Button>
       <form id='createRecommendationForm' onSubmit={HandleCreateRecommendation}>
-        {/*<div>
+        <div>
           <label>For Groups:</label>
           <Select isMulti onChange={onGroupsChange} options={(dataGroups) ? (dataGroups.getUsersGroups.map(group => ({ value: group.id, label: group.name }))) : (<></>)} />
-        </div>}*/}
+        </div>
         <div>
           <label>For Friends:</label>
           <Select isMulti onChange={onFriendsChange} options={(dataFriends) ? (dataFriends.getFriends.map(friend => ({ value: friend.id, label: friend.username }))) : (<></>)} />
@@ -534,6 +559,85 @@ function InitialData() {
     </div>
   )
 
+  const renderRecFromMe = (rec) => (
+    <div>
+      {console.log("from me")}
+      {console.log(rec)}
+      <h4>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</h4>
+      {(rec.description) ? (<p>Description: {rec.description}</p>) : (<></>)}
+      To: {(rec.group) ? (rec.group.name) : (rec.receiver.username)}<br/>
+      My rating: {rec.rating}/10<br/>
+      {(rec.gameAddition) ? (<p>Percentage of played: {rec.gameAddition.progress * 100}</p>) : (<></>)}
+      Genres: {rec.genres.map(genre => <> {genre.name}</>)}<br/>
+      {rec.feedbacks.map(fb =>
+        <div>
+          <h5>Feedback: </h5>
+          <p>From: {fb.user.username}, Feedbacker's state: {fb.state}, Rating: {fb.rating}<br/>
+            Commentary: {fb.commentary}</p>
+        </div>
+      )}
+    </div>
+  )
+
+  const [recToFeedback, setRecToFeedback] = useState();
+  const [feedbackersState, setFeedbackersState] = useState();
+  const [myRating, setMyRating] = useState();
+
+  const onMyRatingChange = (selectedOption) => { setMyRating(selectedOption); }
+  const onFeedbackersStateChange = (selectedOption) => { setFeedbackersState(selectedOption); }
+
+  const renderFeedbackForm = (
+    <form id='feedbackForm' onSubmit={HandleCreateFeedback}>
+      <label>My rating </label>
+      <Select id="rating" required onChange={onMyRatingChange} options={[
+        { value: 0, label: 0 },
+        { value: 1, label: 1 },
+        { value: 2, label: 2 },
+        { value: 3, label: 3 },
+        { value: 4, label: 4 },
+        { value: 5, label: 5 },
+        { value: 6, label: 6 },
+        { value: 7, label: 7 },
+        { value: 8, label: 8 },
+        { value: 9, label: 9 },
+        { value: 10, label: 10 }
+      ]} />
+      <label>My state</label>
+      <Select id="state" required onChange={onFeedbackersStateChange} options={[
+        { value: "INTEREST", label: "It looks interesting" },
+        { value: "DISINTEREST", label: "It's not interesting for me" },
+        { value: "SEEN_OR_PLAYED", label: "I have seen or played it already" }
+      ]} />
+      <label>Commentary </label>
+      <textarea name="commentary"></textarea>
+      <input type="submit" />
+    </form>
+  )
+
+  const renderRecToMe = (rec, haveReacted) => (
+    <div>
+      {console.log("to me")}
+      {console.log(rec)}
+      {(haveReacted) ? (<></>) : (<p className='newRecWarning'>UNRESPOND RECOMMENDATION</p>)}
+      <h5>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</h5>
+      {(rec.description) ? (<p>Description: {rec.description}</p>) : (<></>)}
+      From: {(rec.group) ? (<>{rec.group.name} ({rec.sender.username})</>) : (<>{rec.sender.username}</>)}<br/>
+      Sender rating: {rec.rating}/10<br/>
+      {(rec.gameAddition) ? (<>Percentage of played: {rec.gameAddition.progress * 100}<br/></>) : (<></>)}
+      Genres: {rec.genres.map(genre => <> {genre.name}</>)}<br/>
+      {(haveReacted) ? (rec.feedbacks.map(fb =>
+        <div>
+          <h5>Feedback: </h5> <p> From: {fb.user.username}{(fb.user.id === dataUser.userIfCorrectPassword.id) ? (<>(me)</>) : (<></>)}, Feedbacker's state: {fb.state}, Rating: {fb.rating} <br/>
+          Commentary: {fb.commentary}</p>
+        </div>
+      )) : (
+        <div>
+          My feedback: {(rec.id === recToFeedback) ? (renderFeedbackForm) : (<Button onClick={() => setRecToFeedback(rec.id)}>Create Feedback</Button>)}
+        </div>
+      )}
+    </div>
+  )
+
   const renderShowRecommendations = (
     <div>
       <h3>Recommendations:</h3>
@@ -541,15 +645,9 @@ function InitialData() {
       {
         (loadingRecommendations || !dataRecommendations) ? (<p>Loading...</p>) : ((errorRecommendations) ? (<p>Error : {errorRecommendations.message}</p>) : (dataRecommendations.getUsersRecommendations.map(rec =>
           <div>
-            <p></p>
-            <h5>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</h5>
-            {(rec.description) ? (<p>Description: {rec.description}</p>) : (<></>)}
-            <p>From: {(rec.group) ? (<>{rec.group.name} ({rec.sender.username})</>) : (<>{rec.sender.username}</>)}</p>
-            <p>To: {(rec.group) ? (rec.group.name) : (rec.receiver.username)}</p>
-            <p>Sender rating: {rec.rating}/10</p>
-            {(rec.gameAddition) ? (<p>Percentage of played: {rec.gameAddition.progress * 100}</p>) : (<></>)}
-            <p>Genres: {rec.genres.map(genre => <> {genre.name}</>)}</p>
-            <p></p>
+            <p>----</p>
+            {(rec.sender.id === dataUser.userIfCorrectPassword.id) ? (renderRecFromMe(rec)) : (renderRecToMe(rec, rec.feedbacks.find(fb => fb.user.id === dataUser.userIfCorrectPassword.id)))}
+            <p>----</p>
           </div>
         )))
       }
@@ -717,7 +815,7 @@ function InitialData() {
       }
       else setErrorMessages({ name: "existingGroup", message: errors.existingGroup });
     }
-    if (toReloadRecommendations) {
+    if (toReloadRecommendations && !loadingCreateFeedback) {
       setToReloadRecommendations(false);
       refetchRecommendations({ id: dataUser.userIfCorrectPassword.id });
     }

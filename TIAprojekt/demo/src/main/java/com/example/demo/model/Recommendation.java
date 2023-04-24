@@ -62,7 +62,20 @@ public class Recommendation {
         this.feedbacks = new ArrayList<>();
     }
 
-    public Recommendation(int id, int sender, Integer group, Integer receiver, String title, String description, int rating, GameAddition gameAddition, LocalDateTime postTime, List<Integer> genres, List<Integer> feedbacks) {
+    public Recommendation(int id, int sender, @Nullable Integer group, @Nullable Integer receiver, String title, @Nullable String description, int rating, @Nullable GameAddition gameAddition, List<Integer> genres, List<Integer> feedbacks) {
+        this.id = id;
+        this.sender = sender;
+        this.group = group;
+        this.receiver = receiver;
+        this.title = title;
+        this.description = description;
+        this.rating = rating;
+        this.gameAddition = gameAddition;
+        postTime = LocalDateTime.now();
+        this.genres = genres;
+        this.feedbacks = feedbacks;
+    }
+    public Recommendation(int id, int sender, @Nullable Integer group, @Nullable Integer receiver, String title, @Nullable String description, int rating, @Nullable GameAddition gameAddition, LocalDateTime postTime, List<Integer> genres, List<Integer> feedbacks) {
         this.id = id;
         this.sender = sender;
         this.group = group;
@@ -77,7 +90,7 @@ public class Recommendation {
     }
 
     private static List<Recommendation> recommendations = new ArrayList<>(Arrays.asList(
-            new Recommendation(0, 0, null, 1, "Simsonovci", null, 6, null, Arrays.asList(4,23,28))
+            new Recommendation(0, 0, null, 1, "Simsonovci", null, 6, null, Arrays.asList(4,23,28), List.of(0))
     ));
 
     public static List<Recommendation> getUsersRecommendations(int userId){
