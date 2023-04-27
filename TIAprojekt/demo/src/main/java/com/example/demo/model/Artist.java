@@ -6,18 +6,18 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-@Entity
-@Table(name = "ARTIST")
+//@Entity
+//@Table(name = "ARTIST")
 public class Artist {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    //@Id
+    //@GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     private String firstName;
     private String lastName;
 
-    @JsonBackReference
-    @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL,orphanRemoval = true)
+    //@JsonBackReference
+    //@OneToMany(mappedBy = "artist", cascade = CascadeType.ALL,orphanRemoval = true)
     private Set<Song> songs = new HashSet<>();
 
     public Artist() {

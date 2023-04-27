@@ -4,17 +4,17 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import javax.persistence.*;
 import java.util.Objects;
 
-@Entity
-@Table(name = "SONG")
+//@Entity
+//@Table(name = "SONG")
 public class Song {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    //@Id
+    //@GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String title;
 
-    @JsonManagedReference
-    @ManyToOne
-    @JoinColumn(name = "artist_id")
+    //@JsonManagedReference
+    //@ManyToOne
+    //@JoinColumn(name = "artist_id")
     private Artist artist;
 
     public Song() {

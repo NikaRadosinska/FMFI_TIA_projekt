@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 
-@RestController
-@RequestMapping("/api")
+//@RestController
+//@RequestMapping("/api")
 public class SongController {
 
-    @Autowired
+    //@Autowired
     private SongService songService;
 
     public SongController(SongService songService) {

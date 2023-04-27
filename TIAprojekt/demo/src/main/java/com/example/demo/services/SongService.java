@@ -5,7 +5,7 @@ import com.example.demo.repositories.SongRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
-@Service
+//@Service
 public class SongService {
 
     private SongRepository songRepository;

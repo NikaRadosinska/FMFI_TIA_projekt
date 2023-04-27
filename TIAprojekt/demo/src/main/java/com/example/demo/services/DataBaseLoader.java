@@ -7,8 +7,8 @@ import com.example.demo.repositories.SongRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-@Component
-public class DataBaseLoader implements CommandLineRunner {
+//@Component
+public class DataBaseLoader /*implements CommandLineRunner*/ {
 
 
     private final ArtistRepository artistRepository;
@@ -19,7 +19,7 @@ public class DataBaseLoader implements CommandLineRunner {
         this.songRepository = songRepository;
     }
 
-    @Override
+    //@Override
     public void run(String... args) throws Exception {
 
         Artist jt = new Artist("Justin", "Timberlake");
