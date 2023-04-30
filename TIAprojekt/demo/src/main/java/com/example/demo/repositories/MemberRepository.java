@@ -11,6 +11,7 @@ import java.util.List;
 
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Integer> {
+    Member  findById(int id);;
     long deleteByGroupAndUser(Group group, User user);
     List<Member> findAllByGroup(Group group);
 }

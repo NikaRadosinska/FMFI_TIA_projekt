@@ -3,10 +3,12 @@ package com.example.demo.services;
 import com.example.demo.model.User;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class UsersService {
 
     private UserRepository userRepository;
@@ -17,7 +19,7 @@ public class UsersService {
 
 
     public User getUserById(int id){
-        return userRepository.getReferenceById(id);
+        return userRepository.findById(id);
     }
 
     public List<String> getAllUserNames(){

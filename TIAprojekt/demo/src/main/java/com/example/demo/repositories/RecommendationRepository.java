@@ -10,4 +10,5 @@ import java.util.List;
 
 @Repository
 public interface RecommendationRepository extends JpaRepository<Recommendation, Integer> {
+    Recommendation  findById(int id);;
 }

@@ -6,10 +6,12 @@ import com.example.demo.model.Recommendation;
 import com.example.demo.model.User;
 import com.example.demo.repositories.FeedbackRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class FeedbacksService {
 
     private FeedbackRepository feedbackRepository;
@@ -19,7 +21,7 @@ public class FeedbacksService {
     }
 
     public Feedback getFeedbackById(int id){
-        return feedbackRepository.getReferenceById(id);
+        return feedbackRepository.findById(id);
     }
 
     public int createFeedback(User userId, FeedbackerState state, int rating, String commentary, Recommendation recommendation){

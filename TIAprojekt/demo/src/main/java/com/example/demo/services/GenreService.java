@@ -4,11 +4,13 @@ import com.example.demo.model.EGenre;
 import com.example.demo.model.Genre;
 import com.example.demo.repositories.GenreRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
 
 @Service
+@Transactional
 public class GenreService {
 
     private GenreRepository genreRepository;
@@ -18,7 +20,7 @@ public class GenreService {
     }
 
     public EGenre getGenreById(int id){
-        return genreRepository.getReferenceById(id);
+        return genreRepository.findById(id);
     }
 
     public void resetGenres(){

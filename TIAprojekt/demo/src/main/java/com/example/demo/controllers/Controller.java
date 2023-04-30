@@ -50,6 +50,7 @@ public class Controller {
 
     public void InitialData(){
         addAdmin("admin", "admin123");
+        addUser("userOne", "userOnePassword");
         resetGenres();
     }
 

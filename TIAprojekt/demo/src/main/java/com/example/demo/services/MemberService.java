@@ -4,10 +4,12 @@ import com.example.demo.model.*;
 import com.example.demo.repositories.FeedbackRepository;
 import com.example.demo.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class MemberService {
     private MemberRepository memberRepository;
 
@@ -17,7 +19,7 @@ public class MemberService {
 
 
     public Member getMemberById(int id){
-        return memberRepository.getReferenceById(id);
+        return memberRepository.findById(id);
     }
 
     public List<Group> getUsersGroups(User user){

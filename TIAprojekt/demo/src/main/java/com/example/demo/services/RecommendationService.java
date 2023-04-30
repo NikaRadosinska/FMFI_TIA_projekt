@@ -3,12 +3,14 @@ package com.example.demo.services;
 import com.example.demo.model.*;
 import com.example.demo.repositories.RecommendationRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 @Service
+@Transactional
 public class RecommendationService {
     private RecommendationRepository recommendationRepository;
 
@@ -17,7 +19,7 @@ public class RecommendationService {
     }
 
     public Recommendation getRecommendationById(int id){
-        return recommendationRepository.getReferenceById(id);
+        return recommendationRepository.findById(id);
     }
 
     public List<Recommendation> getUsersRecommendations(User user, List<Group> usersGroups){

@@ -3,8 +3,10 @@ package com.example.demo.services;
 import com.example.demo.model.Group;
 import com.example.demo.repositories.GroupRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class GroupService {
     private GroupRepository groupRepository;
 
@@ -14,7 +16,7 @@ public class GroupService {
 
 
     public Group getGroupById(int id){
-        return groupRepository.getReferenceById(id);
+        return groupRepository.findById(id);
     }
 
     public Group createGroup(String groupname){

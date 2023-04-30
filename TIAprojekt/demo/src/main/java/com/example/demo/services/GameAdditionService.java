@@ -3,8 +3,10 @@ package com.example.demo.services;
 import com.example.demo.model.GameAddition;
 import com.example.demo.repositories.GameAdditionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class GameAdditionService {
     private GameAdditionRepository gameAdditionRepository;
 
@@ -14,7 +16,7 @@ public class GameAdditionService {
 
 
     public GameAddition getGameAdditionById(int id){
-        return gameAdditionRepository.getReferenceById(id);
+        return gameAdditionRepository.findById(id);
     }
 
     public GameAddition createGameAddition(float progress){
