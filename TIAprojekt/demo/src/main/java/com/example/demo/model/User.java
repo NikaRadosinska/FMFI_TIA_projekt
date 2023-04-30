@@ -1,63 +1,65 @@
 package com.example.demo.model;
 
+import com.example.demo.repositories.UserRepository;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
+import javax.persistence.*;
+@Entity
+@Table(name="users")
 public class User {
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
     private int id;
+    @Column(nullable=false)
     private String username;
+    @Column(nullable=false)
     private String password;
+    @Column(nullable=false)
     private Boolean isAdmin;
 
-    public User(int id, String userName, String password, Boolean isAdmin){
-        this.id = id;
+    public User() {
+    }
+
+    public User(String userName, String password, Boolean isAdmin){
         this.username = userName;
         this.password = password;
         this.isAdmin = isAdmin;
     }
 
-    private static List<User> users = new ArrayList<>(Arrays.asList(
-            new User(0,"admin", "admin123", true),
-            new User(1,"userOne", "userOnePassword", false),
-            new User(2,"userTwo", "userTwoPassword", false)
-    ));
-
-    public static List<String> getAllUserNames(){
-        return users.stream().map(user -> user.username).toList();
+    public UserInfo getUserInfo(){
+        return new UserInfo(id, username);
     }
 
-    public static User userIfCorrectPassword(String userName, String password){
-        return users.stream().filter(user -> user.username.equals(userName) &&  user.password.equals(password)).findFirst().orElse(null);
-    }
-
-    public static User addUser(String userName, String password){
-        User u = new User(users.size(), userName,password,false);
-        users.add(u);
-        return u;
-    }
-
-    public static User addAdmin(String userName, String password){
-        User u = new User(users.size(), userName,password,true);
-        users.add(u);
-        return u;
-    }
-
-    public static User getById(int id){
-        return users.get(id);
-    }
-    public static User getByUsername(String userName){
-        return users.stream().filter(user -> user.username.equals(userName)).findFirst().orElse(null);
-    }
-
-    public String getUsername(){
-        return username;
-    }
-    public int getId(){
+    public int getId() {
         return id;
     }
 
-    public UserInfo getUserInfo(){
-        return new UserInfo(id, username);
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public Boolean getAdmin() {
+        return isAdmin;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id == user.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

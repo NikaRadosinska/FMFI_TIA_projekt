@@ -1,41 +1,56 @@
 package com.example.demo.model;
 
-import java.awt.*;
+import com.example.demo.repositories.MemberRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
+@Entity
+@Table(name = "members")
 public class Member {
-    private int groupID;
-    private int user;
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    private int id;
+    @OneToOne
+    @JoinColumn(name = "group_id")
+    private Group group;
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    public Member(int groupID, int user){
-        this.groupID = groupID;
+    public Member(){}
+
+    public Member(Group group, User user) {
+        this.group = group;
         this.user = user;
     }
 
-    private static List<Member> members = new ArrayList<>(Arrays.asList(
-            new Member(0,0),
-            new Member(1,1)
-    ));
-
-    public static List<Group> getUsersGroups(int userId){
-        return members.stream().filter(member -> member.user == userId).map(member -> Group.getById(member.groupID)).toList();
+    public int getId() {
+        return id;
     }
 
-    public static boolean addUserToGroup(int userid, int groupid){
-        if (members.stream().anyMatch(m -> m.user == userid && m.groupID == groupid)) return false;
-        members.add(new Member(groupid, userid));
-        return true;
+    public Group getGroup() {
+        return group;
     }
 
-    public static boolean leaveGroup(int userid, int groupid){
-        boolean ret = members.removeIf(m -> m.groupID == groupid && m.user == userid);
-        if(members.stream().noneMatch(m -> m.groupID == groupid)) Group.deleteGroup(groupid);
-        return ret;
+    public User getUser() {
+        return user;
     }
 
-    public static List<UserInfo> getMembersOfGroup(int groupID){
-        return members.stream().filter(m -> m.groupID == groupID).map(m -> User.getById(m.user).getUserInfo()).toList();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Member member = (Member) o;
+        return id == member.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

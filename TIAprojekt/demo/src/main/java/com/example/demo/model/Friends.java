@@ -1,43 +1,51 @@
 package com.example.demo.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import javax.persistence.*;
+import java.util.Objects;
 
+@Entity
+@Table(name="friends")
 public class Friends {
-    private int id1;
-    private int id2;
 
-    public Friends(int id1, int id2){
-        this.id1 = id1;
-        this.id2 = id2;
+    @Id
+    @GeneratedValue(strategy=GenerationType.SEQUENCE)
+    private int id;
+    @OneToOne
+    @JoinColumn(name = "id1", nullable = false)
+    private User userOne;
+    @OneToOne
+    @JoinColumn(name = "id2", nullable = false)
+    private User userTwo;
+
+    public Friends(){}
+
+    public Friends(User user1, User user2) {
+        this.userOne = user1;
+        this.userTwo = user2;
     }
 
-    private static List<Friends> friends = new ArrayList<>(Arrays.asList(
-            new Friends(0,1),
-            new Friends(1,2)
-    ));
-
-    public int getId1() {
-        return id1;
+    public int getId() {
+        return id;
     }
 
-    public int getId2() {
-        return id2;
+    public User getUserOne() {
+        return userOne;
     }
 
-    public static List<UserInfo> getFriendsUsernames(int id){
-
-        return friends.stream().filter(pair -> pair.id1 == id || pair.id2 == id).map(pair2 -> (pair2.id1 == id) ? (pair2.id2) : (pair2.id1)).map(userId -> User.getById(userId).getUserInfo()).toList();
+    public User getUserTwo() {
+        return userTwo;
     }
 
-    public static boolean addFriend(int id, String username){
-        User friend = User.getByUsername(username);
-        return friends.add(new Friends(id, friend.getId()));
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Friends friends = (Friends) o;
+        return id == friends.id;
     }
 
-    public static boolean removeFriend(int id, String username){
-        User friend = User.getByUsername(username);
-        return friends.removeIf(pair -> (pair.id1 == id && pair.id2 == friend.getId()) || (pair.id1 == friend.getId() && pair.id2 == id));
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

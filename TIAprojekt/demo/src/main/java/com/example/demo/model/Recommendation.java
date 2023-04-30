@@ -1,118 +1,119 @@
 package com.example.demo.model;
 
+import com.example.demo.repositories.RecommendationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.lang.Nullable;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.UnaryOperator;
 
+@Entity
+@Table(name = "recommendations")
 public class Recommendation {
+    @Id
     private int id;
-    private int sender;
-    private Integer group;
-    private Integer receiver;
+    @OneToOne
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
+    @OneToOne
+    @JoinColumn(name = "group_id")
+    private Group group;
+    @OneToOne
+    @JoinColumn(name = "receiver_id")
+    private User receiver;
+    @Column(nullable = false)
     private String title;
+    @Column
     private String description;
+    @Column(nullable = false)
     private int rating;
+    @OneToOne
+    @JoinColumn(name = "game_addition")
     private GameAddition gameAddition;
+    @Column(nullable = false)
     private LocalDateTime postTime;
-    private List<Integer> genres;
+    @Column(nullable = false)
+    private Integer[] genres;
 
-    public List<Integer> getFeedbacks() {
-        return feedbacks;
+    @OneToMany(mappedBy = "recommendation")
+    private List<Feedback> feedbacks;
+
+
+    public Recommendation(){}
+
+    public Recommendation(User sender, Group group, User receiver, String title, String description, int rating, GameAddition gameAddition, List<Integer> genres) {
+        this.sender = sender;
+        this.group = group;
+        this.receiver = receiver;
+        this.title = title;
+        this.description = description;
+        this.rating = rating;
+        this.gameAddition = gameAddition;
+        this.postTime = LocalDateTime.now();
+        this.genres = genres.toArray(new Integer[0]);
     }
 
-    private List<Integer> feedbacks;
+    public int getId() {
+        return id;
+    }
 
-    public int getSender(){
+    public User getSender() {
         return sender;
     }
 
-    public Integer getGroup() {
+    public Group getGroup() {
         return group;
     }
 
-    public Integer getReceiver() {
+    public User getReceiver() {
         return receiver;
     }
 
-    public List<Integer> getGenres(){
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public GameAddition getGameAddition() {
+        return gameAddition;
+    }
+
+    public LocalDateTime getPostTime() {
+        return postTime;
+    }
+
+    public Integer[] getGenres() {
         return genres;
+    }
+
+    public List<Feedback> getFeedbacks() {
+        return feedbacks;
     }
 
     public boolean isForFilm(){
         return gameAddition == null;
     }
 
-    public Recommendation(int id, int sender, @Nullable Integer group,@Nullable Integer receiver, String title,@Nullable String description, int rating, @Nullable GameAddition gameAddition, List<Integer> genres){
-        this.id = id;
-        this.sender = sender;
-        this.group = group;
-        this.receiver = receiver;
-        this.title = title;
-        this.description = description;
-        this.rating = rating;
-        this.gameAddition = gameAddition;
-        postTime = LocalDateTime.now();
-        this.genres = genres;
-        this.feedbacks = new ArrayList<>();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Recommendation that = (Recommendation) o;
+        return id == that.id;
     }
 
-    public Recommendation(int id, int sender, @Nullable Integer group, @Nullable Integer receiver, String title, @Nullable String description, int rating, @Nullable GameAddition gameAddition, List<Integer> genres, List<Integer> feedbacks) {
-        this.id = id;
-        this.sender = sender;
-        this.group = group;
-        this.receiver = receiver;
-        this.title = title;
-        this.description = description;
-        this.rating = rating;
-        this.gameAddition = gameAddition;
-        postTime = LocalDateTime.now();
-        this.genres = genres;
-        this.feedbacks = feedbacks;
-    }
-    public Recommendation(int id, int sender, @Nullable Integer group, @Nullable Integer receiver, String title, @Nullable String description, int rating, @Nullable GameAddition gameAddition, LocalDateTime postTime, List<Integer> genres, List<Integer> feedbacks) {
-        this.id = id;
-        this.sender = sender;
-        this.group = group;
-        this.receiver = receiver;
-        this.title = title;
-        this.description = description;
-        this.rating = rating;
-        this.gameAddition = gameAddition;
-        this.postTime = postTime;
-        this.genres = genres;
-        this.feedbacks = feedbacks;
-    }
-
-    private static List<Recommendation> recommendations = new ArrayList<>(Arrays.asList(
-            new Recommendation(0, 0, null, 1, "Simsonovci", null, 6, null, Arrays.asList(4,23,28), List.of(0))
-    ));
-
-    public static List<Recommendation> getUsersRecommendations(int userId){
-        List<Integer> groups =  Member.getUsersGroups(userId).stream().map(Group::getId).toList();
-        List<Recommendation> recs = new java.util.ArrayList<>(recommendations.stream().filter(rec -> (rec.group != null && groups.contains(rec.group)) || (rec.receiver != null && rec.receiver == userId) || (rec.sender == userId)).toList());
-        recs.sort(Comparator.comparing(o -> o.postTime));
-        return recs;
-    }
-
-    public static boolean createRecommendation(int sender, Integer groupid, Integer receiver, String title, String description, int rating, Float progress, List<Integer> genresids){
-        Recommendation rec = new Recommendation(recommendations.get(recommendations.size()-1).id + 1, sender, groupid, receiver, title, description, rating, (progress != null) ? (new GameAddition(progress)) : (null), genresids);
-        return recommendations.add(rec);
-    }
-
-    public static void addFeedback(int recommendationId, int feedbackId){
-        recommendations.replaceAll(r -> {
-            if(r.id == recommendationId){
-                List<Integer> feedbacks = new ArrayList<>(r.feedbacks);
-                feedbacks.add(feedbackId);
-                return new Recommendation(r.id, r.sender, r.group, r.receiver, r.title, r.description, r.rating, r.gameAddition, r.postTime, r.genres, feedbacks);
-            }
-            return r;
-        });
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

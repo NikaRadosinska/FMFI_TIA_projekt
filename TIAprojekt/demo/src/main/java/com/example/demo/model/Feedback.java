@@ -1,42 +1,74 @@
 package com.example.demo.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.example.demo.enums.FeedbackerState;
 
+import javax.persistence.*;
+import java.util.Objects;
+
+@Entity
+@Table(name = "feedbacks")
 public class Feedback {
-
+    @Id
+    @GeneratedValue(strategy=GenerationType.SEQUENCE)
     private int id;
-
-    public int getUserId() {
-        return userId;
-    }
-
-    private int userId;
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private FeedbackerState state;
+    @Column(nullable = false)
     private int rating;
     private String commentary;
+    @ManyToOne
+    @JoinColumn(name = "recommendation_id", nullable = false)
+    private Recommendation recommendation;
 
-    public Feedback(int id, int userId, FeedbackerState state, int rating, String commentary) {
-        this.id = id;
-        this.userId = userId;
+
+    public Feedback() {}
+
+    public Feedback(User userId, FeedbackerState state, int rating, String commentary, Recommendation recommendation) {
+        this.user = userId;
         this.state = state;
         this.rating = rating;
         this.commentary = commentary;
+        this.recommendation = recommendation;
     }
 
-
-    private static List<Feedback> feedbacks = new ArrayList<>(Arrays.asList(
-            new Feedback(0, 1, FeedbackerState.SEEN_OR_PLAYED, 8, "funny")
-    ));
-
-    public static int createFeedback(int userId, FeedbackerState state, int rating, String commentary){
-        Feedback f = new Feedback(feedbacks.get(feedbacks.size()-1).id + 1, userId, state, rating, commentary);
-        feedbacks.add(f);
-        return f.id;
+    public int getId() {
+        return id;
     }
 
-    public static List<Feedback> getFeedbacks(List<Integer> ids){
-        return feedbacks.stream().filter(feedback -> ids.contains(feedback.id)).toList();
+    public User getUser() {
+        return user;
+    }
+
+    public FeedbackerState getState() {
+        return state;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public String getCommentary() {
+        return commentary;
+    }
+
+    public Recommendation getRecommendation() {
+        return recommendation;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Feedback feedback = (Feedback) o;
+        return id == feedback.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

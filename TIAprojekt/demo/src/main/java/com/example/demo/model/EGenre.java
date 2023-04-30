@@ -1,29 +1,19 @@
 package com.example.demo.model;
 
-import com.example.demo.repositories.GroupRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "groups")
-public class Group {
+@Table(name = "genre")
+public class EGenre {
+
     @Id
     @GeneratedValue(strategy= GenerationType.SEQUENCE)
     private int id;
     @Column(nullable = false)
     private String name;
-
-    public Group() {
-    }
-
-    public Group(String name) {
-        this.name = name;
-    }
+    @Column(nullable = false)
+    private boolean isForGame;
 
     public int getId() {
         return id;
@@ -33,12 +23,28 @@ public class Group {
         return name;
     }
 
+    public boolean isForGame() {
+        return isForGame;
+    }
+
+    public Genre getGenre(){
+        return new Genre(id, name);
+    }
+
+    public EGenre() {
+    }
+
+    public EGenre(String name, boolean isForGame) {
+        this.name = name;
+        this.isForGame = isForGame;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Group group = (Group) o;
-        return id == group.id;
+        EGenre genre = (EGenre) o;
+        return id == genre.id;
     }
 
     @Override

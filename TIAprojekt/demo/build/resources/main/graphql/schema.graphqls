@@ -32,6 +32,8 @@ type Query {
 }
 
 type Mutation {
+    resetGenres: Boolean
+
     addUser(username: String!, password: String!): User
     addAdmin(username: String!, password: String!): User
 
