@@ -1,0 +1,12 @@
+1. Nikola Radošinská
+2. Odporúčací systém na hry a filmy.
+3. 34.-30.4.2023
+4. admin funkcie
+5. (3dbf7d4) - spravenie backendu pre feedbacky a fixnutie registracie
+   (18ce916) - spravenie frontendu pre feedbacky
+   (519de85) - zaciatok prace na implementacii databazy (nejake mensie zmeny)
+   (824b43e) - nastavenie databazy na rendercome a nastavenie entit repozitarov a services v backende
+   (2532ba4) - fixovanie buggov po testovani
+6. dohanam z minulych tyzdnov resty 
+7. admin funkcie a graficke prostredie spravit viac user friendly
+8. nic
