@@ -21,6 +21,6 @@ public class DemoApplication implements CommandLineRunner{
 
 	@Override
 	public void run(String... args) throws Exception {
-		Controller.controller.InitialData();
+		//Controller.controller.InitialData();
 	}
 }
