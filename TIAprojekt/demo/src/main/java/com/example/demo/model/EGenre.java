@@ -23,6 +23,10 @@ public class EGenre {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public boolean isForGame() {
         return isForGame;
     }

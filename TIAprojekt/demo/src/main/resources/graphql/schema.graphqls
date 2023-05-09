@@ -29,6 +29,11 @@ type Query {
 
     getFilmGenres: [FilmGenre]
     getGameGenres: [GameGenre]
+
+    getAllUsers: [User]
+    getAllRecommendations: [Recommendation]
+    getAllGroups: [Group]
+    getAllMembers: [Member]
 }
 
 type Mutation {
@@ -47,6 +52,15 @@ type Mutation {
 
     createRecommendation(sender: Int!, groupid: Int, receiver: Int, title: String!, description: String, rating: Int!, progress: Float, genresids: [Int]!): Boolean
     createFeedback(recommendationId: Int!, userId: Int!, state: FeedbackerState!, rating: Int!, commentary: String): Boolean
+
+    deleteUserById(id: Int!): Boolean
+    deleteGroupById(id: Int!): Boolean
+    deleteRecommendationById(id: Int!): Boolean
+    deleteGenreById(id: Int!): Boolean
+    deleteFeedbackById(id: Int!): Boolean
+
+    addGenre(name: String!, isForGame: Boolean!): Genre
+    changeNameOfGenre(id: Int!, name: String!): Genre
 }
 
 type User {

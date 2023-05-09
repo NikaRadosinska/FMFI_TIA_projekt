@@ -10,7 +10,12 @@ import Button from 'react-bootstrap/Button';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import NavDropdown from 'react-bootstrap/NavDropdown';
-import Select from 'react-select';
+import { Component } from "react";
+import Select, { components } from "react-select";
+import Form from 'react-bootstrap/Form';
+import Card from 'react-bootstrap/Card';
+import ListGroup from 'react-bootstrap/ListGroup';
+import Offcanvas from 'react-bootstrap/Offcanvas';
 
 const initialState = {
   isLoading: true,
@@ -70,6 +75,17 @@ query getUserIfCorrectPassword($username: String!, $password: String!) {
 const ADD_USER = gql`
 mutation getAddUser($username: String!, $password: String!) {
   addUser(username: $username, password: $password){
+    id
+    username
+    password
+    isAdmin
+  }
+}
+`;
+
+const ADD_ADMIN = gql`
+mutation getAddAdmin($username: String!, $password: String!) {
+  addAdmin(username: $username, password: $password){
     id
     username
     password
@@ -188,6 +204,131 @@ mutation createFeedback($recommendationId: Int!, $userId: Int!, $state: Feedback
 }
 `;
 
+const GET_ALL_USERS = gql`
+query getAllUsers {
+  getAllUsers{
+    id
+    username
+    password
+    isAdmin
+  }
+}
+`;
+
+const GET_ALL_RECOMMENDATIONS = gql`
+query getAllRecommendations {
+  getAllRecommendations{
+    id
+    sender{
+      id
+      username
+    }
+    group{
+      id
+      name
+    }
+    receiver{
+      id
+      username
+    }
+    title
+    description
+    rating
+    gameAddition{
+      progress
+    }
+    postTime
+    genres{
+      id
+      name
+    }
+    feedbacks{
+      id
+      user{
+        id
+        username
+      }
+      state
+      rating
+      commentary
+    }
+  }
+}
+`;
+
+const GET_ALL_GROUPS = gql`
+query getAllGroups {
+  getAllGroups{
+    id
+    name
+  }
+}
+`;
+
+const GET_ALL_MEMBERS = gql`
+query getAllMembers {
+  getAllMembers{
+    group{
+      id
+      name
+    }
+    user{
+      id
+      username
+      password
+      isAdmin
+    }
+  }
+}
+`;
+
+const DELETE_USER = gql`
+mutation deleteUserById($id: Int!) {
+  deleteUserById(id: $id)
+}
+`;
+
+const DELETE_GROUP = gql`
+mutation deleteGroupById($id: Int!) {
+  deleteGroupById(id: $id)
+}
+`;
+
+const DELETE_RECOMMENDATION = gql`
+mutation deleteRecommendationById($id: Int!) {
+  deleteRecommendationById(id: $id)
+}
+`;
+
+const DELETE_FEEDBACK = gql`
+mutation deleteFeedbackById($id: Int!) {
+  deleteFeedbackById(id: $id)
+}
+`;
+
+const DELETE_GENRE = gql`
+mutation deleteGenreById($id: Int!) {
+  deleteGenreById(id: $id)
+}
+`;
+
+const ADD_GENRE = gql`
+mutation addGenre($name: String!, $isForGame: Boolean!) {
+  addGenre(name: $name, isForGame: $isForGame){
+    id
+    name
+  }
+}
+`;
+
+const CHANGE_NAME_OF_GENRE = gql`
+mutation changeNameOfGenre($id: Int!, $name: String!) {
+  changeNameOfGenre(id: $id, name: $name){
+    id
+    name
+  }
+}
+`;
 
 
 function InitialData() {
@@ -206,41 +347,142 @@ function InitialData() {
     userAlreadyInGroup: "user is already in group",
     existingGroup: "group with such name already exists",
     alreadyInGroup: "this friend is already part of the group",
-    atLeastOne: "you need to select at least one friend or group"
+    atLeastOne: "you need to select at least one friend or group",
+    notValidId: "id does not exists in current context",
+    sameGenreNameExists: "Change genre name becouse that one already exists"
   };
 
   //STATES
   const [isLoginForm, setIsLoginForm] = useState(true);
-  const [toReloadFriends, setToReloadFriends] = useState(false);
   const [toReloadGroups, setToReloadGroups] = useState(false);
   const [toReloadRecommendations, setToReloadRecommendations] = useState(false);
   const [leftGroup, setLeftGroup] = useState(false);
   const [errorMessages, setErrorMessages] = useState({});
   const [link, setLink] = useState("");
+  const [adminLink, setAdminLink] = useState("users");
   const [selectedGroup, setSelectedGroup] = useState("");
   const [toCreateRecommendation, setToCreateRecommendation] = useState(false);
   const [recommendationForFilm, setRecommendationForFilm] = useState(true);
-  const { loading, error, data } = useQuery(GET_ALL_USERNAMES);
-  const { loading: loadingFilmGenres, error: errorFilmGenres, data: dataFilmGenres } = useQuery(GET_FILM_GENRES, { queryKey: ['filmGenres'] });
-  const { loading: loadingGameGenres, error: errorGameGenres, data: dataGameGenres } = useQuery(GET_GAME_GENRES, { queryKey: ['gameGenres'] });
+  const [showRecsGroup, setShowRecsGroup] = useState(-1);
+  const [showRecsFromFriend, setShowRecsFromFriend] = useState(-1);
+  const [showRecsToFriend, setShowRecsToFriend] = useState(-1);
+  const { loading, error, data, refetch } = useQuery(GET_ALL_USERNAMES);
+  const { loading: loadingFilmGenres, error: errorFilmGenres, data: dataFilmGenres, refetch: refetchFilmGenres } = useQuery(GET_FILM_GENRES, { queryKey: ['filmGenres'] });
+  const { loading: loadingGameGenres, error: errorGameGenres, data: dataGameGenres, refetch: refetchGameGenres } = useQuery(GET_GAME_GENRES, { queryKey: ['gameGenres'] });
   const [getUserByPassword, { loading: loadingUser, error: errorUser, data: dataUser }] = useLazyQuery(GET_USER_IF_CORRECT_PASSWORD);
   const [getAddUserData, { loading: loadingAddUser, error: errorAddUser, data: dataAddUser }] = useMutation(ADD_USER);
+  const [getAddAdminData, { loading: loadingAddAdmin, error: errorAddAdmin, data: dataAddAdmin }] = useMutation(ADD_ADMIN, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'allUsernames',
+      'getAllUsers' // Query name
+    ],
+  });
   const [getFriends, { loading: loadingFriends, error: errorFriends, data: dataFriends, refetch: refetchFriends }] = useLazyQuery(GET_FRIENDS);
   const [getGroups, { loading: loadingGroups, error: errorGroups, data: dataGroups, refetch: refetchGroups }] = useLazyQuery(GET_GROUPS);
   const [getRecommendations, { loading: loadingRecommendations, error: errorRecommendations, data: dataRecommendations, refetch: refetchRecommendations }] = useLazyQuery(GET_RECOMMENDATIONS);
-  const [getAddFriend, { loading: loadingAddFriend, error: errorAddFriend, data: dataAddFriend }] = useMutation(ADD_FRIEND);
-  const [getRemoveFriend, { loading: loadingRemoveFriend, error: errorRemoveFriend, data: dataRemoveFriend }] = useMutation(REMOVE_FRIEND);
-  const [getCreateGroup, { loading: loadingCreateGroup, error: errorCreateGroup, data: dataCreateGroup }] = useMutation(CREATE_GROUP);
-  const [getLeaveGroup, { loading: loadingLeaveGroup, error: errorLeaveGroup, data: dataLeaveGroup }] = useMutation(LEAVE_GROUP);
+  const [getAddFriend, { loading: loadingAddFriend, error: errorAddFriend, data: dataAddFriend }] = useMutation(ADD_FRIEND, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getFriends' // Query name
+    ],
+  });
+  const [getRemoveFriend, { loading: loadingRemoveFriend, error: errorRemoveFriend, data: dataRemoveFriend }] = useMutation(REMOVE_FRIEND, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getFriends' // Query name
+    ],
+  });
+  const [getCreateGroup, { loading: loadingCreateGroup, error: errorCreateGroup, data: dataCreateGroup }] = useMutation(CREATE_GROUP, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getUsersGroups' // Query name
+    ],
+  });
+  const [getLeaveGroup, { loading: loadingLeaveGroup, error: errorLeaveGroup, data: dataLeaveGroup }] = useMutation(LEAVE_GROUP, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getUsersGroups' // Query name
+    ],
+  });
   const [getGroupsMembers, { loading: loadingGroupsMembers, error: errorGroupsMembers, data: dataGroupsMembers, refetch: refetchGroupsMembers }] = useLazyQuery(GET_GROUP_MEMBERS);
   const [fetchedGroupMembersName, setFetchedGroupMembersName] = useState("");
-  const [getAddUserToGroup, { loading: loadingAddUserToGroup, error: errorAddUserToGroup, data: dataAddUserToGroup }] = useMutation(ADD_USER_TO_GROUP);
-  const [getCreateRecommendation, { loading: loadingCreateRecommendation, error: errorCreateRecommendation, data: dataCreateRecommendation }] = useMutation(CREATE_RECOMMENDATION);
-  const [getCreateFeedback, { loading: loadingCreateFeedback, error: errorCreateFeedback, data: dataCreateFeedback }] = useMutation(CREATE_FEEDBACK);
+  const [getAddUserToGroup, { loading: loadingAddUserToGroup, error: errorAddUserToGroup, data: dataAddUserToGroup }] = useMutation(ADD_USER_TO_GROUP, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getMembersOfGroup' // Query name
+    ],
+  });
+  const [getCreateRecommendation, { loading: loadingCreateRecommendation, error: errorCreateRecommendation, data: dataCreateRecommendation }] = useMutation(CREATE_RECOMMENDATION, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getUsersRecommendations' // Query name
+    ],
+  });
+  const [getCreateFeedback, { loading: loadingCreateFeedback, error: errorCreateFeedback, data: dataCreateFeedback }] = useMutation(CREATE_FEEDBACK, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getUsersRecommendations' // Query name
+    ],
+  });
+  const [getAllUsers, { loading: loadingAllUsers, error: errorAllUsers, data: dataAllUsers, refetch: refetchAllUsers }] = useLazyQuery(GET_ALL_USERS);
+  const [getAllGroups, { loading: loadingAllGroups, error: errorAllGroups, data: dataAllGroups, refetch: refetchAllGroups }] = useLazyQuery(GET_ALL_GROUPS);
+  const [getAllMembers, { loading: loadingAllMembers, error: errorAllMembers, data: dataAllMembers, refetch: refetchAllMembers }] = useLazyQuery(GET_ALL_MEMBERS);
+  const [getAllRecommendation, { loading: loadingAllRecommendations, error: errorAllRecommendations, data: dataAllRecommendations, refetch: refetchAllRecommendations }] = useLazyQuery(GET_ALL_RECOMMENDATIONS);
+  const [toReloadAdministrationInfo, setToReloadAdministrationInfo] = useState(false);
+  const [deleteUser, { loading: loadingDeleteUser, error: errorDeleteUser, data: dataDeleteUser }] = useMutation(DELETE_USER, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'allUsernames',
+      'getAllUsers' // Query name
+    ],
+  });
+  const [deleteGroup, { loading: loadingDeleteGroup, error: errorDeleteGroup, data: dataDeleteGroup }] = useMutation(DELETE_GROUP, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getAllGroups' // Query name
+    ],
+  });
+  const [deleteRecommendation, { loading: loadingDeleteRecommendation, error: errorDeleteRecommendation, data: dataDeleteRecommendation }] = useMutation(DELETE_RECOMMENDATION, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getAllRecommendation' // Query name
+    ],
+  });
+  const [deleteFeedback, { loading: loadingDeleteFeedback, error: errorDeleteFeedback, data: dataDeleteFeedback }] = useMutation(DELETE_FEEDBACK, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getAllRecommendations',
+      'getUsersRecommendations' // Query name
+    ],
+  });
+  const [deleteGenre, { loading: loadingDeleteGenre, error: errorDeleteGenre, data: dataDeleteGenre }] = useMutation(DELETE_GENRE, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getFilmGenres',
+      'getGameGenres' // Query name
+    ],
+  });
+  const [addGenre, { loading: loadingAddGenre, error: errorAddGenre, data: dataAddGenre }] = useMutation(ADD_GENRE, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getFilmGenres',
+      'getGameGenres' // Query name
+    ],
+  });
+  const [changeNameOfGenre, { loading: loadingChangeNameOdGenre, error: errorChangeNameOdGenre, data: dataChangeNameOdGenre }] = useMutation(CHANGE_NAME_OF_GENRE, {
+    refetchQueries: [
+      //GET_POST, // DocumentNode object parsed with gql
+      'getFilmGenres',
+      'getGameGenres' // Query name
+    ],
+  });
   const isEnteredPassword = loadingUser === false && dataUser != undefined;
   const isEnteredCorrectPassword = isEnteredPassword && dataUser.userIfCorrectPassword != null;
   const isSignin = loadingAddUser == false && dataAddUser;
-
+  var imIdToDelete = -1;
+  const [idToDelete, setIdToDelete] = useState(-1);
+  const [newIsForGame, setNewIsForGame] = useState("false");
 
   //HANDLERS
   const HandleChangeLoginSigin = (event) => {
@@ -266,6 +508,24 @@ function InitialData() {
     else {
       if (passOne.value === passTwo.value) {
         getAddUserData({ variables: { username: uname.value, password: passOne.value } });
+      }
+      else {
+        setErrorMessages({ name: "differentControlPassword", message: errors.differentControlPassword });
+      }
+    }
+  }
+
+  const HandleAddAdminSubmit = (event) => {
+    event.preventDefault();
+    setErrorMessages({});
+    var { uname, passOne, passTwo } = document.forms[0];
+    const userData = data.getAllUsernames.find((user) => user === uname.value);
+    if (userData) {
+      setErrorMessages({ name: "usedUsername", message: errors.usedUsername });
+    }
+    else {
+      if (passOne.value === passTwo.value) {
+        getAddAdminData({ variables: { username: uname.value, password: passOne.value } });
       }
       else {
         setErrorMessages({ name: "differentControlPassword", message: errors.differentControlPassword });
@@ -302,7 +562,6 @@ function InitialData() {
       }
       else {
         getAddFriend({ variables: { id: dataUser.userIfCorrectPassword.id, username: username.value } });
-        setToReloadFriends(true);
       }
     }
     else {
@@ -319,7 +578,6 @@ function InitialData() {
     console.log(userData);
     if (userData) {
       getRemoveFriend({ variables: { id: dataUser.userIfCorrectPassword.id, username: username.value } });
-      setToReloadFriends(true);
     }
     else {
       setErrorMessages({ name: "notYourFriend", message: errors.notYourFriend });
@@ -363,7 +621,52 @@ function InitialData() {
       //console.log(eventKey);
       setErrorMessages({});
       setSelectedGroup("");
+      setToCreateRecommendation(false);
       setLink(eventKey);
+    }
+  }
+
+  const HandleAdminNavigation = (eventKey) => {
+    if (eventKey != "") {
+      //console.log(eventKey);
+      setIdToDelete(-1);
+      setErrorMessages({});
+      setAdminLink(eventKey);
+    }
+  }
+
+  const HandleDeleteUser = () => {
+    //log({idToDelete});
+    //console.log({imIdToDelete});
+    deleteUser({ variables: { id: imIdToDelete } });
+  }
+  const HandleDeleteGroup = (event) => {
+    event.preventDefault();
+    deleteGroup({ variables: { id: idToDelete } })
+  }
+  const HandleDeleteRecommendation = (event) => {
+    deleteRecommendation({ variables: { id: imIdToDelete } })
+  }
+  const HandleDeleteFeedback = (event) => {
+    deleteFeedback({ variables: { id: imIdToDelete } })
+  }
+  const HandleDeleteGenre = (event) => {
+    event.preventDefault();
+    deleteGenre({ variables: { id: idToDelete } })
+  }
+  const HandleAddGenre = (event) => {
+    event.preventDefault();
+    setErrorMessages({});
+
+    var { genre_name } = document.forms[1];
+
+    const gamegenre = dataGameGenres.getGameGenres.find(g => g.name === genre_name.value);
+    const filmgenre = dataFilmGenres.getFilmGenres.find(g => g.name === genre_name.value);
+
+    if ((newIsForGame === "true" && gamegenre) || (newIsForGame === "false" && filmgenre)) {
+      setErrorMessages({ name: "sameGenreNameExists", message: errors.sameGenreNameExists });
+    } else {
+      addGenre({ variables: { name: genre_name.value, isForGame: newIsForGame === "true" } });
     }
   }
 
@@ -376,6 +679,10 @@ function InitialData() {
   const onFriendsChange = (selectedOptions) => setSelectedFriends(selectedOptions);
   const onGenresChange = (selectedOptions) => { setSelectedGenres(selectedOptions); }
   const onRatingChange = (selectedOption) => { setSelectedRating(selectedOption); }
+
+  const HandleEmpty = (event) => {
+    event.preventDefault();
+  }
 
   const HandleCreateRecommendation = (event) => {
     event.preventDefault();
@@ -411,6 +718,8 @@ function InitialData() {
         });
       })
     }
+
+    setToCreateRecommendation(false);
   }
 
   const HandleCreateFeedback = (event) => {
@@ -418,7 +727,7 @@ function InitialData() {
     var { commentary } = document.forms[0];
     getCreateFeedback({
       variables: {
-        recommendationId: recToFeedback,
+        recommendationId: recToGiveFeedback,
         userId: dataUser.userIfCorrectPassword.id,
         state: feedbackersState.value,
         rating: myRating.value,
@@ -427,8 +736,7 @@ function InitialData() {
     });
     setFeedbackersState();
     setMyRating();
-    setRecToFeedback();
-    setToReloadRecommendations(true);
+    setRecToGiveFeedback();
   }
 
   //HTML RETURN_FUNCTIONS/VARIABLES
@@ -438,7 +746,7 @@ function InitialData() {
     );
 
   const renderNav = (
-    <Navbar bg="dark" variant="dark" expand="md">
+    <Navbar bg="dark" variant="dark" expand="md" collapseOnSelect>
       {/*<Navbar.Brand href="#home">React-Bootstrap</Navbar.Brand>*/}
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       <Navbar.Collapse id="basic-navbar-nav">
@@ -446,6 +754,7 @@ function InitialData() {
           <Nav.Link eventKey={"recommendations"}>Recommendations</Nav.Link>
           <Nav.Link eventKey={"friends"}>Friends</Nav.Link>
           <Nav.Link eventKey={"groups"}>Groups</Nav.Link>
+          {(isEnteredCorrectPassword && dataUser.userIfCorrectPassword.isAdmin) ? (<Nav.Link eventKey={"admin"}>Administration</Nav.Link>) : (<></>)}
         </Nav>
       </Navbar.Collapse>
     </Navbar>
@@ -454,7 +763,7 @@ function InitialData() {
   const renderLoginForm = (
     <div className="login-form">
       <div className="title">Log In</div>
-      <form onSubmit={HandleLoginFormSubmit}>
+      <form onSubmit={(!loadingUser) ? (HandleLoginFormSubmit) : (HandleEmpty)}>
         {renderErrorMessage("waitForResponseAboutPassword")}
         <div className="input-container">
           <label>Username </label>
@@ -467,7 +776,7 @@ function InitialData() {
           {renderErrorMessage("wrongPassword")}
         </div>
         <div className="button-container">
-          <input type="submit" />
+          <input type="submit" value={((!loadingUser) ? ("Submit") : ("Loading..."))} />
         </div>
       </form>
     </div>
@@ -475,7 +784,7 @@ function InitialData() {
 
   const renderSigninForm = (
     <div className="SigninForm">
-      <form onSubmit={HandleSigninFormSubmit}>
+      <form onSubmit={(!loadingAddUser) ? (HandleSigninFormSubmit) : (HandleEmpty)}>
         {renderErrorMessage("waitForResponseAboutAddUser")}
         <div className="input-container">
           <label>Username </label>
@@ -492,22 +801,28 @@ function InitialData() {
           {renderErrorMessage("differentControlPassword")}
         </div>
         <div className="button-container">
-          <input type="submit" />
+          <input type="submit" value={(!loadingAddUser) ? ("Submit") : ("Loading...")} />
         </div>
       </form>
     </div>
   );
 
+  const renderRecommendationButton = (
+    <div className='midPanel'>
+      <Button className="recommendationButton" onClick={() => setToCreateRecommendation(!toCreateRecommendation)}>{(toCreateRecommendation) ? (<>Back to Recommendations</>) : (<>Create NEW Recommendation</>)}</Button>
+    </div>
+  )
+
   const renderCreateRecommendation = (
     <div>
       <h3>Create Recommendation</h3>
-      <Button className="recommendationButton" onClick={() => { setRecommendationForFilm(!recommendationForFilm); setSelectedGenres(); }}>{(recommendationForFilm) ? (<>Show form for game</>) : (<>Show form for movie</>)}</Button>
+      <Button onClick={() => { setRecommendationForFilm(!recommendationForFilm); setSelectedGenres(); }}>{(recommendationForFilm) ? (<>Show form for game</>) : (<>Show form for movie</>)}</Button>
       <form id='createRecommendationForm' onSubmit={HandleCreateRecommendation}>
-        <div>
+        <div className="input-container">
           <label>For Groups:</label>
           <Select isMulti onChange={onGroupsChange} options={(dataGroups) ? (dataGroups.getUsersGroups.map(group => ({ value: group.id, label: group.name }))) : (<></>)} />
         </div>
-        <div>
+        <div className="input-container">
           <label>For Friends:</label>
           <Select isMulti onChange={onFriendsChange} options={(dataFriends) ? (dataFriends.getFriends.map(friend => ({ value: friend.id, label: friend.username }))) : (<></>)} />
         </div>
@@ -520,7 +835,7 @@ function InitialData() {
           <label>Description </label>
           <textarea name="description"></textarea>
         </div>
-        <div>
+        <div className="input-container">
           <label>Your rating </label>
           <Select id="rating" required onChange={onRatingChange} options={[
             { value: 0, label: 0 },
@@ -537,12 +852,12 @@ function InitialData() {
           ]} />
         </div>
         {
-          (recommendationForFilm) ? (<></>) : (<div>
+          (recommendationForFilm) ? (<></>) : (<div className="input-container">
             <label>Your progress (%)</label>
             <input type="number" name="progress" min="1" max="100" required />
           </div>)
         }
-        <div>
+        <div className="input-container">
           <label>Genres:</label>
           {
             (recommendationForFilm) ? (
@@ -553,33 +868,121 @@ function InitialData() {
           }
         </div>
         <div className="button-container">
-          <input type="submit" />
+          <input type="submit" value={"Submit"} />
         </div>
       </form>
     </div>
   )
 
+
+  const [showRecDesc, setShowRecDesc] = useState({
+    recid: -1,
+    toShowDesc: false
+  })
+
+  const [showRecFeeds, setShowRecFeeds] = useState({
+    recommendation: {
+      id: -1,
+      sender: {
+        id: -1,
+        username: ""
+      },
+      group: {
+        id: -1,
+        name: ""
+      },
+      receiver: {
+        id: -1,
+        username: ""
+      },
+      title: "",
+      description: "",
+      rating: 0,
+      gameAddition: {
+        progress: 0
+      },
+      postTime: -1,
+      genres: [{
+        id: -1,
+        name: ""
+      }],
+      feedbacks: [{
+        id: -1,
+        user: {
+          id: -1,
+          username: ""
+        },
+        state: 0,
+        rating: 0,
+        commentary: ""
+      }]
+    },
+    toShowFeeds: false
+  })
+
   const renderRecFromMe = (rec) => (
-    <div>
-      {console.log("from me")}
-      {console.log(rec)}
-      <h4>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</h4>
-      {(rec.description) ? (<p>Description: {rec.description}</p>) : (<></>)}
-      To: {(rec.group) ? (rec.group.name) : (rec.receiver.username)}<br/>
-      My rating: {rec.rating}/10<br/>
-      {(rec.gameAddition) ? (<p>Percentage of played: {rec.gameAddition.progress * 100}</p>) : (<></>)}
-      Genres: {rec.genres.map(genre => <> {genre.name}</>)}<br/>
-      {rec.feedbacks.map(fb =>
-        <div>
-          <h5>Feedback: </h5>
-          <p>From: {fb.user.username}, Feedbacker's state: {fb.state}, Rating: {fb.rating}<br/>
-            Commentary: {fb.commentary}</p>
-        </div>
-      )}
-    </div>
+    <Card>
+      {(rec.description) ? (
+        <Card.Header>
+          <Nav variant="tabs" defaultActiveKey={"info"} onSelect={(eventKey) => { setShowRecDesc({ recid: rec.id, toShowDesc: eventKey === "description" }) }} >
+            <Nav.Item>
+              <Nav.Link eventKey="info">Info</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link eventKey="description">Description</Nav.Link>
+            </Nav.Item>
+          </Nav>
+        </Card.Header>
+      ) : (<></>)}
+      <Card.Body>
+        <Card.Title>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</Card.Title>
+      </Card.Body>
+      {(showRecDesc.recid === rec.id && showRecDesc.toShowDesc) ? (
+        <Card.Body>
+          <Card.Text>
+            {rec.description}
+          </Card.Text>
+        </Card.Body>
+      ) : (
+        <ListGroup className="list-group-flush">
+          <ListGroup.Item>To: {(rec.group) ? (rec.group.name + " (group)") : (rec.receiver.username)}</ListGroup.Item>
+          <ListGroup.Item>My rating: {rec.rating}/10</ListGroup.Item>
+          {(rec.gameAddition) ? (<ListGroup.Item>Percentage of played: {rec.gameAddition.progress * 100}</ListGroup.Item>) : (<></>)}
+          <ListGroup.Item>Genres: {rec.genres.map(genre => <> {genre.name}</>)}</ListGroup.Item>
+        </ListGroup>
+      )
+      }
+      <Card.Footer>
+        {(rec.group) ? (<>
+          <Button onClick={() => { setShowRecFeeds({ recommendation: rec, toShowFeeds: true }) }}>Show Feedbacks</Button>
+          <Offcanvas show={showRecFeeds.toShowFeeds} onHide={() => setShowRecFeeds({ recommendation: rec, toShowFeeds: false })}>
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>{showRecFeeds.recommendation.title}</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+              {showRecFeeds.recommendation.feedbacks.map(feed =>
+                <Card style={{ width: '100%' }}>
+                  <Card.Header>{feed.user.username} {(feed.user.id === dataUser.userIfCorrectPassword.id) ? (<>(me)</>) : (<></>)}</Card.Header>
+                  <ListGroup variant="flush">
+                    <ListGroup.Item>state: {feed.state}</ListGroup.Item>
+                    <ListGroup.Item>rating: {feed.rating}</ListGroup.Item>
+                    {(feed.commentary) ? (<ListGroup.Item>{feed.commentary}</ListGroup.Item>) : (<></>)}
+                  </ListGroup>
+                </Card>)}
+            </Offcanvas.Body>
+          </Offcanvas></>) :
+          ((rec.feedbacks.length > 0) ? (<>
+            <h5>Feedback:</h5>
+            <p>state: {rec.feedbacks[0].state}<br />rating: {rec.feedbacks[0].rating}<br />
+              {(rec.feedbacks[0].commentary) ? (<>{rec.feedbacks[0].commentary}</>) : (<></>)}</p>
+          </>) : (<>No Feedback Yet</>))}
+
+      </Card.Footer>
+    </Card>
   )
 
-  const [recToFeedback, setRecToFeedback] = useState();
+  const [recToGiveFeedback, setRecToGiveFeedback] = useState();
+  const [recToShowFeedbacks, setRecToShowFeedbacks] = useState();
   const [feedbackersState, setFeedbackersState] = useState();
   const [myRating, setMyRating] = useState();
 
@@ -587,7 +990,7 @@ function InitialData() {
   const onFeedbackersStateChange = (selectedOption) => { setFeedbackersState(selectedOption); }
 
   const renderFeedbackForm = (
-    <form id='feedbackForm' onSubmit={HandleCreateFeedback}>
+    <form id='feedbackForm' onSubmit={(!loadingCreateFeedback) ? (HandleCreateFeedback) : (HandleEmpty)}>
       <label>My rating </label>
       <Select id="rating" required onChange={onMyRatingChange} options={[
         { value: 0, label: 0 },
@@ -610,103 +1013,248 @@ function InitialData() {
       ]} />
       <label>Commentary </label>
       <textarea name="commentary"></textarea>
-      <input type="submit" />
+      <input type="submit" value={(!loadingCreateFeedback) ? ("Submit") : ("Loading..")} />
     </form>
   )
 
+
   const renderRecToMe = (rec, haveReacted) => (
-    <div>
-      {console.log("to me")}
-      {console.log(rec)}
-      {(haveReacted) ? (<></>) : (<p className='newRecWarning'>UNRESPOND RECOMMENDATION</p>)}
-      <h5>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</h5>
-      {(rec.description) ? (<p>Description: {rec.description}</p>) : (<></>)}
-      From: {(rec.group) ? (<>{rec.group.name} ({rec.sender.username})</>) : (<>{rec.sender.username}</>)}<br/>
-      Sender rating: {rec.rating}/10<br/>
-      {(rec.gameAddition) ? (<>Percentage of played: {rec.gameAddition.progress * 100}<br/></>) : (<></>)}
-      Genres: {rec.genres.map(genre => <> {genre.name}</>)}<br/>
-      {(haveReacted) ? (rec.feedbacks.map(fb =>
-        <div>
-          <h5>Feedback: </h5> <p> From: {fb.user.username}{(fb.user.id === dataUser.userIfCorrectPassword.id) ? (<>(me)</>) : (<></>)}, Feedbacker's state: {fb.state}, Rating: {fb.rating} <br/>
-          Commentary: {fb.commentary}</p>
-        </div>
-      )) : (
-        <div>
-          My feedback: {(rec.id === recToFeedback) ? (renderFeedbackForm) : (<Button onClick={() => setRecToFeedback(rec.id)}>Create Feedback</Button>)}
-        </div>
-      )}
-    </div>
+    <Card>
+      {(rec.description) ? (
+        <Card.Header>
+          <Nav variant="tabs" defaultActiveKey={"info"} onSelect={(eventKey) => { setShowRecDesc({ recid: rec.id, toShowDesc: eventKey === "description" }) }} >
+            <Nav.Item>
+              <Nav.Link eventKey="info">Info</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link eventKey="description">Description</Nav.Link>
+            </Nav.Item>
+          </Nav>
+        </Card.Header>
+      ) : (<></>)}
+      <Card.Body>
+        <Card.Title>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</Card.Title>
+      </Card.Body>
+      {(showRecDesc.recid === rec.id && showRecDesc.toShowDesc) ? (
+        <Card.Body>
+          <Card.Text>
+            {rec.description}
+          </Card.Text>
+        </Card.Body>
+      ) : (
+        <ListGroup className="list-group-flush">
+          <ListGroup.Item>{(rec.group) ? (<>Group: {rec.group.name} ({rec.sender.username})</>) : (<>From: {rec.sender.username}</>)}</ListGroup.Item>
+          <ListGroup.Item>Sender rating: {rec.rating}/10</ListGroup.Item>
+          {(rec.gameAddition) ? (<ListGroup.Item>Percentage of played: {rec.gameAddition.progress * 100}</ListGroup.Item>) : (<></>)}
+          <ListGroup.Item>Genres: {rec.genres.map(genre => <> {genre.name}</>)}</ListGroup.Item>
+        </ListGroup>
+      )
+      }
+      <Card.Footer>
+        {(haveReacted) ?
+          ((rec.group) ? (
+            <>
+              <Button onClick={() => { setShowRecFeeds({ recommendation: rec, toShowFeeds: true }) }}>Show Feedbacks</Button>
+              <Offcanvas show={showRecFeeds.toShowFeeds} onHide={() => setShowRecFeeds({ recommendation: showRecFeeds.recommendation, toShowFeeds: false })}>
+                <Offcanvas.Header closeButton>
+                  <Offcanvas.Title>{showRecFeeds.recommendation.title}</Offcanvas.Title>
+                </Offcanvas.Header>
+                <Offcanvas.Body>
+                  {showRecFeeds.recommendation.feedbacks.map(feed =>
+                    <Card style={{ width: '100%' }}>
+                      <Card.Header>{feed.user.username} {(feed.user.id === dataUser.userIfCorrectPassword.id) ? (<>(me)</>) : (<></>)}</Card.Header>
+                      <ListGroup variant="flush">
+                        <ListGroup.Item>state: {feed.state}</ListGroup.Item>
+                        <ListGroup.Item>rating: {feed.rating}</ListGroup.Item>
+                        {(feed.commentary) ? (<ListGroup.Item>{feed.commentary}</ListGroup.Item>) : (<></>)}
+                      </ListGroup>
+                      {(feed.user.id === dataUser.userIfCorrectPassword.id) ? (
+                        <Card.Footer>
+                          <Button onClick={() => { imIdToDelete = feed.id; HandleDeleteFeedback(); }}>Delete My Feedback</Button>
+                        </Card.Footer>) : (<></>)}
+                    </Card>)}
+                </Offcanvas.Body>
+              </Offcanvas>
+            </>) : (
+            <>
+              <h5>My Feedback:</h5>
+              <p>state: {rec.feedbacks[0].state}<br />rating: {rec.feedbacks[0].rating}<br />
+                {(rec.feedbacks[0].commentary) ? (<>{rec.feedbacks[0].commentary}</>) : (<></>)}</p>
+              <Button onClick={() => { imIdToDelete = rec.feedbacks[0].id; HandleDeleteFeedback(); setShowRecFeeds({ recommendation: showRecFeeds.rec, toShowFeeds: false }) }}>Delete My Feedback</Button>
+            </>
+          )) :
+          (<div>
+            {(rec.id === recToGiveFeedback) ? (renderFeedbackForm) : (<Button variant='danger' onClick={() => setRecToGiveFeedback(rec.id)}>Create Feedback</Button>)}
+          </div>)}
+      </Card.Footer>
+    </Card>
   )
 
+  const { ValueContainer, Placeholder } = components;
+  const CustomValueContainer = ({ children, ...props }) => {
+    return (
+      <ValueContainer {...props}>
+        <Placeholder {...props} isFocused={props.isFocused}>
+          {props.selectProps.placeholder}
+        </Placeholder>
+        {React.Children.map(children, child =>
+          child && child.type !== Placeholder ? child : null
+        )}
+      </ValueContainer>
+    );
+  };
+
   const renderShowRecommendations = (
-    <div>
+    <>
+      <div>
+        <Button onClick={() => setToReloadRecommendations(true)}>{(loadingRecommendations) ? (<>Loading...</>) : (<>Reload Recommendations</>)}</Button>
+      </div>
+
+      <div className='holderHorizontalGap'>
+        <Select
+          components={{
+            ValueContainer: CustomValueContainer
+          }}
+          placeholder="Group"
+          styles={{
+            container: (provided, state) => ({
+              ...provided,
+              marginTop: 25
+            }),
+            valueContainer: (provided, state) => ({
+              ...provided,
+              overflow: "visible"
+            }),
+            placeholder: (provided, state) => ({
+              ...provided,
+              position: "absolute",
+              top: state.hasValue || state.selectProps.inputValue ? -27 : "50%",
+              transition: "top 0.1s, font-size 0.1s",
+              fontSize: (state.hasValue || state.selectProps.inputValue) && 16
+            })
+          }}
+          defaultValue={{ value: -1, label: "No selected group" }}
+          onChange={(eventKey) => setShowRecsGroup(eventKey.value)}
+          options={(dataGroups) ? ([{ value: -1, label: "No selected group" }].concat(dataGroups.getUsersGroups.map(group => ({ value: group.id, label: group.name })))) : (<></>)} />
+        <Select
+          components={{
+            ValueContainer: CustomValueContainer
+          }}
+          placeholder="From Friend"
+          styles={{
+            container: (provided, state) => ({
+              ...provided,
+              marginTop: 25
+            }),
+            valueContainer: (provided, state) => ({
+              ...provided,
+              overflow: "visible"
+            }),
+            placeholder: (provided, state) => ({
+              ...provided,
+              position: "absolute",
+              top: state.hasValue || state.selectProps.inputValue ? -27 : "50%",
+              transition: "top 0.1s, font-size 0.1s",
+              fontSize: (state.hasValue || state.selectProps.inputValue) && 16
+            })
+          }}
+          defaultValue={{ value: -1, label: "No selected friend" }}
+          onChange={(eventKey) => setShowRecsFromFriend(eventKey.value)}
+          options={(dataFriends) ? ([{ value: -1, label: "No selected friend" }, { value: dataUser.userIfCorrectPassword.id, label: dataUser.userIfCorrectPassword.username + " (me)" }].concat(dataFriends.getFriends.map(friend => ({ value: friend.id, label: friend.username })))) : (<></>)} />
+        <Select
+          components={{
+            ValueContainer: CustomValueContainer
+          }}
+          placeholder="To Friend"
+          styles={{
+            container: (provided, state) => ({
+              ...provided,
+              marginTop: 25
+            }),
+            valueContainer: (provided, state) => ({
+              ...provided,
+              overflow: "visible"
+            }),
+            placeholder: (provided, state) => ({
+              ...provided,
+              position: "absolute",
+              top: state.hasValue || state.selectProps.inputValue ? -27 : "50%",
+              transition: "top 0.1s, font-size 0.1s",
+              fontSize: (state.hasValue || state.selectProps.inputValue) && 16
+            })
+          }}
+          defaultValue={{ value: -1, label: "No selected friend" }}
+          onChange={(eventKey) => setShowRecsToFriend(eventKey.value)}
+          options={(dataFriends) ? ([{ value: -1, label: "No selected friend" }, { value: dataUser.userIfCorrectPassword.id, label: dataUser.userIfCorrectPassword.username + " (me)" }].concat(dataFriends.getFriends.map(friend => ({ value: friend.id, label: friend.username })))) : (<></>)} />
+      </div>
       <h3>Recommendations:</h3>
-      <Button onClick={() => setToReloadRecommendations(true)}>Reload Recommendations</Button>
-      {
-        (loadingRecommendations || !dataRecommendations) ? (<p>Loading...</p>) : ((errorRecommendations) ? (<p>Error : {errorRecommendations.message}</p>) : (dataRecommendations.getUsersRecommendations.map(rec =>
-          <div>
-            <p>----</p>
-            {(rec.sender.id === dataUser.userIfCorrectPassword.id) ? (renderRecFromMe(rec)) : (renderRecToMe(rec, rec.feedbacks.find(fb => fb.user.id === dataUser.userIfCorrectPassword.id)))}
-            <p>----</p>
-          </div>
-        )))
-      }
-    </div>
+      <Container>
+        <Row xs={1} md={2} lg={3} className="g-4">
+          {
+            (loadingRecommendations || !dataRecommendations) ? (<p>Loading...</p>) : ((errorRecommendations) ? (<p>Error : {errorRecommendations.message}</p>) : (dataRecommendations.getUsersRecommendations.filter(rec => showRecsGroup === -1 || (rec.group && rec.group.id === showRecsGroup)).filter(rec => showRecsFromFriend === -1 || (rec.sender.id === showRecsFromFriend && !rec.group)).filter(rec => showRecsToFriend === -1 || (rec.receiver && rec.receiver.id === showRecsToFriend)).map(rec =>
+              <Col>
+                {(rec.sender.id === dataUser.userIfCorrectPassword.id) ? (renderRecFromMe(rec)) : (renderRecToMe(rec, rec.feedbacks.find(fb => fb.user.id === dataUser.userIfCorrectPassword.id)))}
+              </Col>
+            )))
+          }
+        </Row>
+      </Container>
+    </>
   )
 
   const renderRecommendations = (
     <div className='part'>
-      {(toCreateRecommendation) ? (renderCreateRecommendation) : (renderShowRecommendations)}
-      <div className="bottomPanel">
-        <Button className="recommendationButton" onClick={() => setToCreateRecommendation(!toCreateRecommendation)}>{(toCreateRecommendation) ? (<>Back to Recommendations</>) : (<>Create NEW Recommendation</>)}</Button>
-      </div>
+      <div className='midPanel'>{(toCreateRecommendation) ? (renderCreateRecommendation) : (renderShowRecommendations)}</div>
     </div>
   )
 
   const renderFriendsForms = (
-    <div className="bottomPanel">
+    <div className='midPanel'>
       <h4>Manage Your Friends</h4>
-      <div className="addFriendForm">
-        <form onSubmit={HandleAddFriend}>
-          <label>add user: </label>
-          <input type="text" name="username" required />
-          {renderErrorMessage("noSuchUser")}
-          {renderErrorMessage("yourUsername")}
-          {renderErrorMessage("alreadyYourFriend")}
-          <div className="button-container">
-            <input type="submit" />
-          </div>
-        </form>
-      </div>
-      <div className="removeFriendForm">
-        <form onSubmit={HandleRemoveFriend}>
-          <label>remove friend: </label>
-          <input type="text" name="username" required />
-          {renderErrorMessage("notYourFriend")}
-          <div className="button-container">
-            <input type="submit" />
-          </div>
-        </form>
+      <div className='holderBiggerHorizontalGap'>
+        <div className="addFriendForm">
+          <form onSubmit={(!loadingAddFriend) ? (HandleAddFriend) : (HandleEmpty)}>
+            <label>add user: </label>
+            <input type="text" name="username" required />
+            {renderErrorMessage("noSuchUser")}
+            {renderErrorMessage("yourUsername")}
+            {renderErrorMessage("alreadyYourFriend")}
+            <div className="button-container">
+              <input type="submit" value={(!loadingAddFriend) ? ("Submit") : ("Loading")} />
+            </div>
+          </form>
+        </div>
+        <div className="removeFriendForm">
+          <form onSubmit={(!loadingRemoveFriend) ? (HandleRemoveFriend) : (HandleEmpty)}>
+            <label>remove friend: </label>
+            <input type="text" name="username" required />
+            {renderErrorMessage("notYourFriend")}
+            <div className="button-container">
+              <input type="submit" value={(!loadingRemoveFriend) ? ("Submit") : ("Loading")} />
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )
 
   const renderFriends = (
     <div className='part'>
-      <h3>Your Friends:</h3>
-      {
-        (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map(user =>
-          <p>{user.username}</p>
-        )))
-      }
-      {(!toReloadFriends && !loadingFriends && dataFriends && dataFriends.getFriends) ? (renderFriendsForms) : (<>Loading...</>)}
+      <div className='midPanel'>
+        <h3>Your Friends:</h3>
+        {
+          (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map(user =>
+            <p>{user.username}</p>
+          )))
+        }
+      </div>
     </div>
   )
 
   const renderAllGroups = (
     <div>
       <h3>Your Groups:</h3>
-      <div>
+      <div className='holderHorizontalGap'>
         {
           (loadingGroups || !dataGroups) ? (<p>Loading...</p>) : ((errorGroups) ? (<p>Error : {errorGroups.message}</p>) : (dataGroups.getUsersGroups.map(group =>
             <Button className="groupButton" onClick={() => setSelectedGroup(group)}>{group.name}</Button>
@@ -718,8 +1266,10 @@ function InitialData() {
 
   const renderSelectedGroup = (
     <div>
-      <Button className="backToAllGroups" onClick={() => setSelectedGroup("")}>&#60; back to all groups</Button>
-      <Button className="leaveGroup" onClick={HandleLeaveGroup}>Leave group</Button>
+      <div className='holderHorizontalGap'>
+        <Button className="backToAllGroups" onClick={() => setSelectedGroup("")}>&#60; back to all groups</Button>
+        <Button variant='danger' className="leaveGroup" onClick={HandleLeaveGroup}>Leave group</Button>
+      </div>
       <h3>Group: {selectedGroup.name}</h3>
       <div>
         {
@@ -732,14 +1282,14 @@ function InitialData() {
   )
 
   const renderCreateGroup = (
-    <div>
+    <div className='midPanel'>
       <h4>Create new group</h4>
-      <form onSubmit={HandleCreateGroup}>
+      <form onSubmit={(!loadingCreateGroup) ? (HandleCreateGroup) : (HandleEmpty)}>
         <label>name of your new group: </label>
         <input type="text" name="groupname" required />
         {renderErrorMessage("existingGroup")}
         <div className="button-container">
-          <input type="submit" />
+          <input type="submit" value={(!loadingCreateGroup) ? ("Submit") : ("Loading")} />
         </div>
       </form>
     </div>
@@ -747,9 +1297,9 @@ function InitialData() {
 
   const renderAddUserToGroup = (
     <div>
-      <h4>Add User To {selectedGroup.name}</h4>
+      <h4>Add User To Group</h4>
       <div className="addUserToGroupForm">
-        <form onSubmit={HandleAddUserToGroup}>
+        <form onSubmit={(!loadingAddUserToGroup) ? (HandleAddUserToGroup) : (HandleEmpty)}>
           <label>
             Pick your friend:
             <select id="addFriendToThisGroupSelect">
@@ -762,7 +1312,7 @@ function InitialData() {
           </label>
           {renderErrorMessage("alreadyInGroup")}
           <div className="button-container">
-            <input type="submit" />
+            <input type="submit" value={(!loadingAddUserToGroup) ? ("Submit") : ("Loading")} />
           </div>
         </form>
       </div>
@@ -771,10 +1321,180 @@ function InitialData() {
 
   const renderGroups = (
     <div className="part">
-      {(selectedGroup === "") ? (renderAllGroups) : (renderSelectedGroup)}
-      <div className="bottomPanel">
-        {(selectedGroup === "") ? (renderCreateGroup) : ((loadingAddUserToGroup) ? (<></>) : (renderAddUserToGroup))}
-      </div>
+      <div className='midPanel'>{(selectedGroup === "") ? (renderAllGroups) : (renderSelectedGroup)}</div>
+    </div>
+  )
+
+  const renderAdminUsers = (
+    <div className='midPanel'>
+      <h3>Add admin:</h3>
+      <form onSubmit={(!loadingAddAdmin) ? (HandleAddAdminSubmit) : (HandleEmpty)}>
+        {renderErrorMessage("waitForResponseAboutAddUser")}
+        <div className="input-container">
+          <label>Username </label>
+          <input type="text" name="uname" required />
+          {renderErrorMessage("usedUsername")}
+        </div>
+        <div className="input-container">
+          <label>Password </label>
+          <input type="password" name="passOne" required />
+        </div>
+        <div className="input-container">
+          <label>Password second time</label>
+          <input type="password" name="passTwo" required />
+          {renderErrorMessage("differentControlPassword")}
+        </div>
+        <div>
+          <input type="submit" value={(!loadingAddAdmin) ? ("Submit") : ("Loading...")} />
+        </div>
+      </form>
+      <h3>Show All Users:</h3>
+      {
+        (loadingAllUsers || !dataAllUsers) ? (<p>Loading...</p>) : ((errorAllUsers) ? (<p>Error : {errorAllUsers.message}</p>) : (dataAllUsers.getAllUsers.map(user =>
+          <p>ID: {user.id}, username: {user.username}, password: {user.password}, isAdmin: {(user.isAdmin) ? (<>true</>) : (<>false</>)},       {<Button onClick={(!loadingDeleteUser) ? (() => { imIdToDelete = user.id; HandleDeleteUser(); }) : (HandleEmpty)}>{(!loadingDeleteUser) ? (<>Delete</>) : (<>Wait</>)}</Button>}</p>
+        )))
+      }
+    </div>
+  )
+
+  const renderAdminGenres = (
+    <div className='midPanel'>
+      <form onSubmit={(!loadingDeleteGenre) ? (HandleDeleteGenre) : (HandleEmpty)}>
+        <div>
+          <label>Genre to delete: <Select required onChange={(eventKey) => setIdToDelete(eventKey.value)} options={
+            (dataGameGenres && dataFilmGenres)
+              ? ([
+                {
+                  label: "Game Genres",
+                  options: dataGameGenres.getGameGenres.map(genre => ({ value: genre.id, label: genre.name }))
+                },
+                {
+                  label: "Movie Genres",
+                  options: dataFilmGenres.getFilmGenres.map(genre => ({ value: genre.id, label: genre.name }))
+                }
+              ])
+              : (<></>)} /></label>
+          <input type="submit" value={((!loadingDeleteGenre) ? ("Submit") : ("Loading..."))} />
+        </div>
+      </form>
+      <form onSubmit={(!loadingAddGenre) ? (HandleAddGenre) : (HandleEmpty)}>
+        <div>
+          Add Genre:
+          <label><input
+            type="radio"
+            name="isForGame"
+            value="false"
+            id="isForMovie"
+            onChange={() => setNewIsForGame("false")}
+            checked={newIsForGame === "false"}
+          />is for movie</label>
+          <label><input
+            type="radio"
+            name="isForGame"
+            value="true"
+            id="isForGame"
+            onChange={() => setNewIsForGame("true")}
+            checked={newIsForGame === "true"}
+          />is for game</label>
+          <label>name:
+            <input type="text" name="genre_name" required /></label>
+          <input type="submit" value={((!loadingAddGenre) ? ("Submit") : ("Loading..."))} />
+          {renderErrorMessage("sameGenreNameExists")}
+        </div>
+      </form>
+      <h3>Game Genres:</h3>
+      {
+        (loadingGameGenres || !dataGameGenres) ? (<p>Loading...</p>) : ((errorGameGenres) ? (<p>Error : {errorGameGenres.message}</p>) : (dataGameGenres.getGameGenres.map(genre =>
+          <p>ID: {genre.id}, name: {genre.name}</p>
+        )))
+      }
+      <h3>Movie Genres:</h3>
+      {
+        (loadingFilmGenres || !dataFilmGenres) ? (<p>Loading...</p>) : ((errorFilmGenres) ? (<p>Error : {errorFilmGenres.message}</p>) : (dataFilmGenres.getFilmGenres.map(genre =>
+          <p>ID: {genre.id}, name: {genre.name}</p>
+        )))
+      }
+    </div>
+  )
+
+  const renderAdminGroups = (
+    <div className='midPanel'>
+      <form onSubmit={(!loadingDeleteGenre) ? (HandleDeleteGroup) : (HandleEmpty)}>
+        <div>
+          <label>Group to delete: <Select required onChange={(eventKey) => setIdToDelete(eventKey.value)} options={
+            (dataAllGroups)
+              ? (dataAllGroups.getAllGroups.map(group =>
+                ({ value: group.id, label: group.name })))
+              : (<></>)} /></label>
+          <input type="submit" value={((!loadingDeleteGroup) ? ("Submit") : ("Loading..."))} />
+        </div>
+      </form>
+      <h3>All Groups:</h3>
+      {(dataAllGroups && dataAllMembers)
+        ? (dataAllGroups.getAllGroups.map(group =>
+          <div><h5>ID: {group.id}, name: {group.name}, members:</h5>
+            {dataAllMembers.getAllMembers.filter(member => member.group.id == group.id).map(member => <>member id: {member.user.id}, member username: {member.user.username}, <br /></>)}
+          </div>
+        ))
+        : (<>loading...</>)}
+    </div>
+  )
+
+  const renderAdminRecommendations = (
+    <div className='midPanel'>
+      <h3>Recommendations:</h3>
+      {
+        (loadingAllRecommendations || !dataAllRecommendations) ? (<p>Loading...</p>) : ((errorAllRecommendations) ? (<p>Error : {errorAllRecommendations.message}</p>) : (dataAllRecommendations.getAllRecommendations.map(rec =>
+          <div>
+            <p>----</p>
+            <h4>{(rec.gameAddition) ? (<>Game </>) : (<></>)}Title: {rec.title}</h4>
+            {(rec.description) ? (<p>Description: {rec.description}</p>) : (<></>)}
+            From: {rec.sender.username}<br />
+            To: {(rec.group) ? (rec.group.name + " (group)") : (rec.receiver.username)}<br />
+            Sender rating: {rec.rating}/10<br />
+            {(rec.gameAddition) ? (<p>Percentage of played: {rec.gameAddition.progress * 100}</p>) : (<></>)}
+            Genres: {rec.genres.map(genre => <> {genre.name}</>)}<br />
+            <Button onClick={() => { imIdToDelete = rec.id; HandleDeleteRecommendation(); }}>{(!loadingDeleteRecommendation) ? (<>Delete</>) : (<>WAIT</>)}</Button>
+            {rec.feedbacks.map(fb =>
+              <div>
+                <h5>Feedback: </h5>
+                <p>From: {fb.user.username}, Feedbacker's state: {fb.state}, Rating: {fb.rating}<br />
+                  Commentary: {fb.commentary}<br />
+                </p>
+                <Button onClick={() => { imIdToDelete = rec.id; HandleDeleteFeedback(); }}>{(!loadingDeleteFeedback) ? (<>Delete</>) : (<>WAIT</>)}</Button>
+              </div>
+            )}
+            <p>----</p>
+          </div>
+        )))
+      }
+    </div>
+  )
+
+  const renderReloadAdminInfo = (
+    <Button className="admininstartionButton" onClick={() => setToReloadAdministrationInfo(!toReloadAdministrationInfo)}>{(toReloadAdministrationInfo) ? (<>WAIT</>) : (<>Reload Administration Info</>)}</Button>
+  )
+
+  const renderAdmin = (
+    <div className='part'>
+      <Navbar bg="dark" variant="dark" expand="md">
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="me-auto" variant="pills" defaultActiveKey={"users"} onSelect={HandleAdminNavigation}>
+            <Nav.Link eventKey={"users"}>Users</Nav.Link>
+            <Nav.Link eventKey={"genres"}>Genres</Nav.Link>
+            <Nav.Link eventKey={"groups"}>Groups</Nav.Link>
+            <Nav.Link eventKey={"recommendations"}>Recommendations</Nav.Link>
+          </Nav>
+        </Navbar.Collapse>
+      </Navbar>
+      {(adminLink === "users")
+        ? (renderAdminUsers)
+        : ((adminLink === "genres")
+          ? (renderAdminGenres)
+          : ((adminLink === "groups")
+            ? (renderAdminGroups)
+            : (renderAdminRecommendations)))}
     </div>
   )
 
@@ -782,10 +1502,13 @@ function InitialData() {
     <div key="userIsLoginComponent" className="user-is-login">
       {(link === "" || link === "recommendations")
         ? (renderRecommendations)
-        : ((link === "friends") ? (renderFriends) : (renderGroups))}
+        : ((link === "friends")
+          ? (renderFriends)
+          : ((link === "groups")
+            ? (renderGroups)
+            : (renderAdmin)))}
     </div>
   );
-
 
 
   //CODE
@@ -801,21 +1524,31 @@ function InitialData() {
       getGroups({ variables: { id: dataUser.userIfCorrectPassword.id } });
       getRecommendations({ variables: { id: dataUser.userIfCorrectPassword.id } });
     }
-    if (toReloadFriends && !loadingAddFriend && !loadingRemoveFriend) {
-      console.log("reload friends");
-      refetchFriends({ id: dataUser.userIfCorrectPassword.id });
-      setToReloadFriends(false);
+    if (isEnteredPassword && isEnteredCorrectPassword && !loadingAllUsers && !dataAllUsers && dataUser.userIfCorrectPassword.isAdmin) {
+      getAllUsers();
+      getAllGroups();
+      getAllRecommendation();
+      getAllMembers();
+    }
+    if (toReloadAdministrationInfo) {
+      refetchAllGroups();
+      refetchAllMembers();
+      refetchAllRecommendations();
+      refetchAllUsers();
+      refetchFilmGenres();
+      refetchGameGenres();
+      setToReloadAdministrationInfo(false);
     }
     if (toReloadGroups && !loadingCreateGroup && !loadingLeaveGroup) {
       setToReloadGroups(false);
 
       if ((dataCreateGroup && dataCreateGroup.createGroup) || (leftGroup)) {
-        refetchGroups({ variables: { id: dataUser.userIfCorrectPassword.id } });
+        refetchGroups({ id: dataUser.userIfCorrectPassword.id });
         if (leftGroup) setLeftGroup(false);
       }
       else setErrorMessages({ name: "existingGroup", message: errors.existingGroup });
     }
-    if (toReloadRecommendations && !loadingCreateFeedback) {
+    if (toReloadRecommendations) {
       setToReloadRecommendations(false);
       refetchRecommendations({ id: dataUser.userIfCorrectPassword.id });
     }
@@ -825,7 +1558,7 @@ function InitialData() {
       else getGroupsMembers({ variables: { id: selectedGroup.id } });
     }
     toReturn = (
-      <div>
+      <div className="mainPanel">
         {(isEnteredPassword && isEnteredCorrectPassword) ? (renderUserIsLoginComponent) : (renderLoginForm)}
       </div>
     )
@@ -833,9 +1566,11 @@ function InitialData() {
   else {
     //console.log("signin form");
     toReturn = (
-      <div className="signin-form">
-        <div className="title">Sign In</div>
-        {(isSignin) ? <div>User is successfully signed in</div> : (renderSigninForm)}
+      <div className='mainPanel'>
+        <div className="signin-form">
+          <div className="title">Sign In</div>
+          {(isSignin) ? <div>User is successfully signed in</div> : (renderSigninForm)}
+        </div>
       </div>
     )
   }
@@ -852,7 +1587,19 @@ function InitialData() {
           </Col>
         </Row>
       </Container>
-      <div className="mainPanel">{toReturn}</div>
+      {toReturn}
+      <div className='bottomPanel'>{
+        ((isEnteredPassword && isEnteredCorrectPassword)) ?
+          ((link === "" || link === "recommendations") ?
+            (renderRecommendationButton) :
+            ((link === "friends") ?
+              (renderFriendsForms) :
+              ((link === "groups")) ?
+                ((selectedGroup === "") ?
+                  (renderCreateGroup) :
+                  (renderAddUserToGroup)) :
+                (renderReloadAdminInfo))) :
+          (<></>)}</div>
     </div>
   )
 }

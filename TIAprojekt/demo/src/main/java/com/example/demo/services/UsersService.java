@@ -17,6 +17,15 @@ public class UsersService {
         this.userRepository = userRepository;
     }
 
+    public List<User> getAllUsers(){
+        return userRepository.findAll();
+    }
+
+    public boolean deleteUserById(int id){
+        User u = userRepository.findById(id);
+        userRepository.deleteById(id);
+        return u != null;
+    }
 
     public User getUserById(int id){
         return userRepository.findById(id);

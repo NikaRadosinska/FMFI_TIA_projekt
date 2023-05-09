@@ -1,9 +1,12 @@
 package com.example.demo.services;
 
 import com.example.demo.model.Group;
+import com.example.demo.model.User;
 import com.example.demo.repositories.GroupRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -14,9 +17,18 @@ public class GroupService {
         this.groupRepository = groupRepository;
     }
 
+    public List<Group> getAllGroups(){
+        return groupRepository.findAll();
+    }
 
     public Group getGroupById(int id){
         return groupRepository.findById(id);
+    }
+
+    public boolean deleteGroupById(int id){
+        Group g = groupRepository.findById(id);
+        groupRepository.deleteById(id);
+        return g != null;
     }
 
     public Group createGroup(String groupname){

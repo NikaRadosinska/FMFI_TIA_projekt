@@ -1,6 +1,8 @@
 package com.example.demo.model;
 
 import com.example.demo.enums.FeedbackerState;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -13,6 +15,7 @@ public class Feedback {
     private int id;
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -22,6 +25,7 @@ public class Feedback {
     private String commentary;
     @ManyToOne
     @JoinColumn(name = "recommendation_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Recommendation recommendation;
 
 

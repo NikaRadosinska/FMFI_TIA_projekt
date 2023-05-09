@@ -1,5 +1,8 @@
 package com.example.demo.model;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import javax.persistence.*;
 import java.util.Objects;
 
@@ -12,9 +15,11 @@ public class Friends {
     private int id;
     @OneToOne
     @JoinColumn(name = "id1", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User userOne;
     @OneToOne
     @JoinColumn(name = "id2", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User userTwo;
 
     public Friends(){}

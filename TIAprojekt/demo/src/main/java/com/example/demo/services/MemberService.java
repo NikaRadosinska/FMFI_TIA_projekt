@@ -26,6 +26,10 @@ public class MemberService {
         return memberRepository.findAll().stream().filter(member -> member.getUser().equals(user)).map(Member::getGroup).toList();
     }
 
+    public List<Member> getAllMembers(){
+        return memberRepository.findAll();
+    }
+
     public boolean addUserToGroup(User user, Group group){
         if (memberRepository.findAll().stream().anyMatch(m -> m.getUser().equals(user) && m.getGroup().equals(group))) return false;
         memberRepository.saveAndFlush(new Member(group, user));

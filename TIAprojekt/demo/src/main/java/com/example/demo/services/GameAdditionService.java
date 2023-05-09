@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.model.GameAddition;
+import com.example.demo.model.Recommendation;
 import com.example.demo.repositories.GameAdditionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,8 +20,8 @@ public class GameAdditionService {
         return gameAdditionRepository.findById(id);
     }
 
-    public GameAddition createGameAddition(float progress){
-        GameAddition ga = new GameAddition(progress);
+    public GameAddition createGameAddition(float progress, Recommendation rec){
+        GameAddition ga = new GameAddition(progress, rec);
         ga = gameAdditionRepository.saveAndFlush(ga);
         return ga;
     }

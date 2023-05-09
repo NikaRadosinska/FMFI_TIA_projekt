@@ -1,6 +1,8 @@
 package com.example.demo.model;
 
 import com.example.demo.repositories.GameAdditionRepository;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.*;
@@ -14,12 +16,17 @@ public class GameAddition {
     private int id;
     @Column(nullable = false)
     private float progress;
+    @OneToOne
+    @JoinColumn(name = "recommendation_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Recommendation recommendation;
 
     public GameAddition() {
     }
 
-    public GameAddition(float progress) {
+    public GameAddition(float progress, Recommendation rec) {
         this.progress = progress;
+        recommendation = rec;
     }
 
     public int getId() {

@@ -1,6 +1,8 @@
 package com.example.demo.model;
 
 import com.example.demo.repositories.RecommendationRepository;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.lang.Nullable;
@@ -14,15 +16,19 @@ import java.util.function.UnaryOperator;
 @Table(name = "recommendations")
 public class Recommendation {
     @Id
+    @GeneratedValue(strategy=GenerationType.SEQUENCE)
     private int id;
     @OneToOne
     @JoinColumn(name = "sender_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User sender;
     @OneToOne
     @JoinColumn(name = "group_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Group group;
     @OneToOne
     @JoinColumn(name = "receiver_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User receiver;
     @Column(nullable = false)
     private String title;
@@ -30,8 +36,7 @@ public class Recommendation {
     private String description;
     @Column(nullable = false)
     private int rating;
-    @OneToOne
-    @JoinColumn(name = "game_addition")
+    @OneToOne(mappedBy = "recommendation")
     private GameAddition gameAddition;
     @Column(nullable = false)
     private LocalDateTime postTime;
@@ -88,12 +93,20 @@ public class Recommendation {
         return gameAddition;
     }
 
+    public void setGameAddition(@Nullable GameAddition gameAddition) {
+        this.gameAddition = gameAddition;
+    }
+
     public LocalDateTime getPostTime() {
         return postTime;
     }
 
     public Integer[] getGenres() {
         return genres;
+    }
+
+    public void setGenres(Integer[] genres) {
+        this.genres = genres;
     }
 
     public List<Feedback> getFeedbacks() {

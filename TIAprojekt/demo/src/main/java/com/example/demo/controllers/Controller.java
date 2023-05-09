@@ -103,7 +103,10 @@ public class Controller {
     }
     @MutationMapping
     public boolean createRecommendation(@Argument int sender, @Argument Integer groupid, @Argument Integer receiver, @Argument String title,@Argument String description, @Argument int rating, @Argument Float progress, @Argument List<Integer> genresids){
-        return recommendationService.createRecommendation(usersService.getUserById(sender), (groupid != null) ? (groupService.getGroupById(groupid)) : (null), (receiver != null) ? (usersService.getUserById(receiver)) : (null), title, description, rating, (progress != null) ? (gameAdditionService.createGameAddition(progress)) : (null), genresids);
+        Recommendation r = recommendationService.createRecommendation(usersService.getUserById(sender), (groupid != null) ? (groupService.getGroupById(groupid)) : (null), (receiver != null) ? (usersService.getUserById(receiver)) : (null), title, description, rating, null, genresids);
+        GameAddition ga = (progress != null) ? (gameAdditionService.createGameAddition(progress, r)) : (null);
+        r.setGameAddition(ga);
+        return true;
     }
     @MutationMapping
     public boolean createFeedback(@Argument int userId, @Argument FeedbackerState state, @Argument int rating, @Argument String commentary, @Argument int recommendationId){
@@ -133,6 +136,58 @@ public class Controller {
     @MutationMapping
     public User addAdmin(@Argument String username, @Argument String password){
         return usersService.addUser(username,password,true);
+    }
+
+    @QueryMapping
+    public List<User> getAllUsers(){
+        return usersService.getAllUsers();
+    }
+
+    @QueryMapping
+    public List<Group> getAllGroups(){
+        return groupService.getAllGroups();
+    }
+
+    @QueryMapping
+    public List<Member> getAllMembers(){
+        return memberService.getAllMembers();
+    }
+
+    @QueryMapping
+    public List<Recommendation> getAllRecommendations(){
+        return recommendationService.getAllRecommendations();
+    }
+
+    @MutationMapping
+    public boolean deleteUserById(@Argument int id){
+        return usersService.deleteUserById(id);
+    }
+    @MutationMapping
+    public boolean deleteGroupById(@Argument int id){
+        return groupService.deleteGroupById(id);
+    }
+    @MutationMapping
+    public boolean deleteRecommendationById(@Argument int id){
+        return recommendationService.deleteRecommendationById(id);
+    }
+    @MutationMapping
+    public boolean deleteFeedbackById(@Argument int id){
+        feedbacksService.deleteFeedbackById(id);
+        return true;
+    }
+    @MutationMapping
+    public boolean deleteGenreById(@Argument int id){
+        recommendationService.deleteGenreById(id);
+        return genreService.deleteGenreById(id);
+    }
+    @MutationMapping
+    public Genre addGenre(@Argument String name, @Argument boolean isForGame){
+        return genreService.addGenre(name, isForGame);
+    }
+
+    @MutationMapping
+    public Genre changeNameOfGenre(@Argument int id, @Argument String name){
+        return genreService.changeGenreName(id, name);
     }
 
     @SchemaMapping

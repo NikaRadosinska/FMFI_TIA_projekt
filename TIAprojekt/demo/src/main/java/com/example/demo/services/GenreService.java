@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.model.EGenre;
 import com.example.demo.model.Genre;
+import com.example.demo.model.User;
 import com.example.demo.repositories.GenreRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,23 @@ public class GenreService {
 
     public EGenre getGenreById(int id){
         return genreRepository.findById(id);
+    }
+
+    public boolean deleteGenreById(int id){
+        EGenre g = genreRepository.findById(id);
+        genreRepository.deleteById(id);
+        return g != null;
+    }
+
+    public Genre changeGenreName(int id, String name){
+        EGenre g = genreRepository.findById(id);
+        g.setName(name);
+        return genreRepository.saveAndFlush(g).getGenre();
+    }
+
+    public Genre addGenre(String name, boolean isForGame){
+        EGenre eg = genreRepository.saveAndFlush(new EGenre(name, isForGame));
+        return eg.getGenre();
     }
 
     public void resetGenres(){

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -18,6 +19,26 @@ public class RecommendationService {
         this.recommendationRepository = recommendationRepository;
     }
 
+    public boolean deleteRecommendationById(int id){
+        Recommendation r = recommendationRepository.findById(id);
+        recommendationRepository.deleteById(id);
+        return r != null;
+    }
+
+    public void deleteGenreById(int id){
+        List<Recommendation> recs = recommendationRepository.findAll();
+        recommendationRepository.deleteAll();
+        recs.forEach(recommendation -> {
+            Integer[] genres = recommendation.getGenres();
+            genres = Arrays.stream(genres).filter(i -> i == id).toArray(Integer[]::new);
+            recommendation.setGenres(genres);
+        });
+    }
+
+    public List<Recommendation> getAllRecommendations(){
+        return recommendationRepository.findAll();
+    }
+
     public Recommendation getRecommendationById(int id){
         return recommendationRepository.findById(id);
     }
@@ -28,10 +49,10 @@ public class RecommendationService {
         return recs;
     }
 
-    public boolean createRecommendation(User sender, Group group, User receiver, String title, String description, int rating, GameAddition gameAddition, List<Integer> genresids){
+    public Recommendation createRecommendation(User sender, Group group, User receiver, String title, String description, int rating, GameAddition gameAddition, List<Integer> genresids){
         Recommendation rec = new Recommendation(sender, group, receiver, title, description, rating, gameAddition, genresids);
         recommendationRepository.saveAndFlush(rec);
-        return true;
+        return rec;
     }
 
 }

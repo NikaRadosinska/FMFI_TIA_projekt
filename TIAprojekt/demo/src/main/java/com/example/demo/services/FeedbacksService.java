@@ -24,6 +24,10 @@ public class FeedbacksService {
         return feedbackRepository.findById(id);
     }
 
+    public void deleteFeedbackById(int id){
+        feedbackRepository.deleteById(id);
+    }
+
     public int createFeedback(User userId, FeedbackerState state, int rating, String commentary, Recommendation recommendation){
         Feedback f = new Feedback(userId, state, rating, commentary, recommendation);
         f = feedbackRepository.saveAndFlush(f);
