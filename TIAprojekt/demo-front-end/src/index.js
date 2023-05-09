@@ -8,7 +8,7 @@ import 'bootstrap/dist/css/bootstrap.css';
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
-  uri: 'http://localhost:3000/graphql',
+  uri: 'https://recommendationsbackend.onrender.com/graphql',
 });
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
