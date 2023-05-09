@@ -1,0 +1,21 @@
+1. Nikola Radošinská
+2. Odporúčací systém na hry a filmy.
+3. https://github.com/NikaRadosinska/FMFI_TIA_projekt/
+4. https://recommendationsfrontend.onrender.com
+5. používam kombináciu Spring(Java), React, Grapql Appolo a Postgresql na rozbehanie som použila tieto tutoriály
+   Spring + React: https://javascript.plainenglish.io/how-to-setup-spring-mvc-with-react-ce2cc422a7e0
+   Graphql in Spring: https://www.baeldung.com/spring-graphql
+   Graphql in React: https://www.apollographql.com/docs/react/get-started/
+   Spring + Postgresql: https://medium.com/geekculture/how-to-create-and-connect-to-a-postgresql-database-with-render-and-pgadmin-577b326fd19d
+6. implementované: prihlasovanie a registrácia
+                   zobrazovanie, pridávanie a odoberanie kamarátov
+                   zobrazovanie a vytváranie skupín
+                   pridávanie kamarátov do skupín a odchod zo skupiny
+                   zobrazovanie odporúčaní
+                   tvorba odporučenia pre kamarátov
+                   tvorba odporučenia pre skupiny
+                   zobrazovanie a dávanie feedbacku
+                   admin funkcie (spravovanie používatelov, skupín a odporúčaní)
+7. asi úplne so všetkým na začiatku, trebalo si na to zvyknúť ale teraz ku koncu to bolo už jednoduché                  
+8. viem, že teraz tomu reaktu už rozumiem lepšie a veci, ktoré som sa naučila alebo pochopila neskôr som už ani nevyužila lebo radsej som to spravila všetko tak isto ako cast kodu tak a dalsiu cast hentak, celkovo front end by som kódila prehladnejšie a rozdelila by som ho
+9. dobre je spravená databáza a serverová strana, ten frontend som začala zle a radsej som v tom tak pokracovala ale naučila som sa z toho to určite. Avšak databazu a server som celé robila alebo prerábala predposledný týžden a to mi funguje naozaj pekne, aj vrátane dotazov pre front end, teda celu logiku graphql mám dobre spravenú
