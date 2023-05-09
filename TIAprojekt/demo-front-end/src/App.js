@@ -446,7 +446,7 @@ function InitialData() {
   const [deleteRecommendation, { loading: loadingDeleteRecommendation, error: errorDeleteRecommendation, data: dataDeleteRecommendation }] = useMutation(DELETE_RECOMMENDATION, {
     refetchQueries: [
       //GET_POST, // DocumentNode object parsed with gql
-      'getAllRecommendation' // Query name
+      'getAllRecommendations' // Query name
     ],
   });
   const [deleteFeedback, { loading: loadingDeleteFeedback, error: errorDeleteFeedback, data: dataDeleteFeedback }] = useMutation(DELETE_FEEDBACK, {
@@ -602,16 +602,16 @@ function InitialData() {
     setLeftGroup(true);
   }
 
+  const [selectedFriend, setSelectedFriend] = useState();
+
   const HandleAddUserToGroup = (event) => {
     event.preventDefault();
-    var friendId = document.getElementById("addFriendToThisGroupSelect").value;
-    console.log(dataGroupsMembers.getMembersOfGroup);
     setErrorMessages({});
-    if (dataGroupsMembers.getMembersOfGroup.find(userInfo => userInfo.id == friendId)) {
+    if (dataGroupsMembers.getMembersOfGroup.find(userInfo => userInfo.id == selectedFriend.value)) {
       setErrorMessages({ name: "alreadyInGroup", message: errors.alreadyInGroup });
     }
     else {
-      getAddUserToGroup({ variables: { userid: friendId, groupid: selectedGroup.id } });
+      getAddUserToGroup({ variables: { userid: selectedFriend.value, groupid: selectedGroup.id } });
       setFetchedGroupMembersName("");
     }
   }
@@ -622,6 +622,8 @@ function InitialData() {
       setErrorMessages({});
       setSelectedGroup("");
       setToCreateRecommendation(false);
+      setSelectedFriends([]);
+      setSelectedGroups([]);
       setLink(eventKey);
     }
   }
@@ -719,6 +721,9 @@ function InitialData() {
       })
     }
 
+    setSelectedFriends([]);
+    setSelectedGenres([]);
+    setSelectedGroup([]);
     setToCreateRecommendation(false);
   }
 
@@ -809,7 +814,7 @@ function InitialData() {
 
   const renderRecommendationButton = (
     <div className='midPanel'>
-      <Button className="recommendationButton" onClick={() => setToCreateRecommendation(!toCreateRecommendation)}>{(toCreateRecommendation) ? (<>Back to Recommendations</>) : (<>Create NEW Recommendation</>)}</Button>
+      <Button className="recommendationButton" onClick={() => { setToCreateRecommendation(!toCreateRecommendation); setSelectedFriends([]); setSelectedGroups([]); }}>{(toCreateRecommendation) ? (<>Back to Recommendations</>) : (<>Create NEW Recommendation</>)}</Button>
     </div>
   )
 
@@ -837,7 +842,7 @@ function InitialData() {
         </div>
         <div className="input-container">
           <label>Your rating </label>
-          <Select id="rating" required onChange={onRatingChange} options={[
+          <Select menuPlacement="top" id="rating" required onChange={onRatingChange} options={[
             { value: 0, label: 0 },
             { value: 1, label: 1 },
             { value: 2, label: 2 },
@@ -861,9 +866,9 @@ function InitialData() {
           <label>Genres:</label>
           {
             (recommendationForFilm) ? (
-              <Select key="filmGenresSelect" isMulti required onChange={onGenresChange} closeMenuOnSelect={false} options={(dataFilmGenres && !loadingFilmGenres) ? (dataFilmGenres.getFilmGenres.map(genre => ({ value: genre.id, label: genre.name }))) : (<></>)} />
+              <Select menuPlacement="top" key="filmGenresSelect" isMulti required onChange={onGenresChange} closeMenuOnSelect={false} options={(dataFilmGenres && !loadingFilmGenres) ? (dataFilmGenres.getFilmGenres.map(genre => ({ value: genre.id, label: genre.name }))) : (<></>)} />
             ) : (
-              <Select key="gameGenresSelect" isMulti required onChange={onGenresChange} closeMenuOnSelect={false} options={(dataGameGenres && !loadingGameGenres) ? (dataGameGenres.getGameGenres.map(genre => ({ value: genre.id, label: genre.name }))) : (<></>)} />
+              <Select menuPlacement="top" key="gameGenresSelect" isMulti required onChange={onGenresChange} closeMenuOnSelect={false} options={(dataGameGenres && !loadingGameGenres) ? (dataGameGenres.getGameGenres.map(genre => ({ value: genre.id, label: genre.name }))) : (<></>)} />
             )
           }
         </div>
@@ -926,10 +931,10 @@ function InitialData() {
         <Card.Header>
           <Nav variant="tabs" defaultActiveKey={"info"} onSelect={(eventKey) => { setShowRecDesc({ recid: rec.id, toShowDesc: eventKey === "description" }) }} >
             <Nav.Item>
-              <Nav.Link eventKey="info">Info</Nav.Link>
+              <Nav.Link eventKey="info" style={{ color: 'black' }}>Info</Nav.Link>
             </Nav.Item>
             <Nav.Item>
-              <Nav.Link eventKey="description">Description</Nav.Link>
+              <Nav.Link eventKey="description" style={{ color: 'black' }}>Description</Nav.Link>
             </Nav.Item>
           </Nav>
         </Card.Header>
@@ -991,29 +996,37 @@ function InitialData() {
 
   const renderFeedbackForm = (
     <form id='feedbackForm' onSubmit={(!loadingCreateFeedback) ? (HandleCreateFeedback) : (HandleEmpty)}>
-      <label>My rating </label>
-      <Select id="rating" required onChange={onMyRatingChange} options={[
-        { value: 0, label: 0 },
-        { value: 1, label: 1 },
-        { value: 2, label: 2 },
-        { value: 3, label: 3 },
-        { value: 4, label: 4 },
-        { value: 5, label: 5 },
-        { value: 6, label: 6 },
-        { value: 7, label: 7 },
-        { value: 8, label: 8 },
-        { value: 9, label: 9 },
-        { value: 10, label: 10 }
-      ]} />
-      <label>My state</label>
-      <Select id="state" required onChange={onFeedbackersStateChange} options={[
-        { value: "INTEREST", label: "It looks interesting" },
-        { value: "DISINTEREST", label: "It's not interesting for me" },
-        { value: "SEEN_OR_PLAYED", label: "I have seen or played it already" }
-      ]} />
-      <label>Commentary </label>
-      <textarea name="commentary"></textarea>
-      <input type="submit" value={(!loadingCreateFeedback) ? ("Submit") : ("Loading..")} />
+      <div className="input-container">
+        <label>My rating </label>
+        <Select id="rating" required onChange={onMyRatingChange} options={[
+          { value: 0, label: 0 },
+          { value: 1, label: 1 },
+          { value: 2, label: 2 },
+          { value: 3, label: 3 },
+          { value: 4, label: 4 },
+          { value: 5, label: 5 },
+          { value: 6, label: 6 },
+          { value: 7, label: 7 },
+          { value: 8, label: 8 },
+          { value: 9, label: 9 },
+          { value: 10, label: 10 }
+        ]} />
+      </div>
+      <div className="input-container">
+        <label>My state</label>
+        <Select id="state" required onChange={onFeedbackersStateChange} options={[
+          { value: "INTEREST", label: "It looks interesting" },
+          { value: "DISINTEREST", label: "It's not interesting for me" },
+          { value: "SEEN_OR_PLAYED", label: "I have seen or played it already" }
+        ]} />
+      </div>
+      <div className="input-container">
+        <label>Commentary </label>
+        <textarea name="commentary"></textarea>
+      </div>
+      <div className="button-container">
+        <input type="submit" value={(!loadingCreateFeedback) ? ("Submit") : ("Loading..")} />
+      </div>
     </form>
   )
 
@@ -1024,10 +1037,10 @@ function InitialData() {
         <Card.Header>
           <Nav variant="tabs" defaultActiveKey={"info"} onSelect={(eventKey) => { setShowRecDesc({ recid: rec.id, toShowDesc: eventKey === "description" }) }} >
             <Nav.Item>
-              <Nav.Link eventKey="info">Info</Nav.Link>
+              <Nav.Link eventKey="info" style={{ color: 'black' }}>Info</Nav.Link>
             </Nav.Item>
             <Nav.Item>
-              <Nav.Link eventKey="description">Description</Nav.Link>
+              <Nav.Link eventKey="description" style={{ color: 'black' }}>Description</Nav.Link>
             </Nav.Item>
           </Nav>
         </Card.Header>
@@ -1296,20 +1309,22 @@ function InitialData() {
   )
 
   const renderAddUserToGroup = (
-    <div>
+    <div className='midPanel'>
       <h4>Add User To Group</h4>
       <div className="addUserToGroupForm">
         <form onSubmit={(!loadingAddUserToGroup) ? (HandleAddUserToGroup) : (HandleEmpty)}>
-          <label>
-            Pick your friend:
-            <select id="addFriendToThisGroupSelect">
-              {
-                (loadingFriends || !dataFriends) ? (<p>Loading...</p>) : ((errorFriends) ? (<p>Error : {errorFriends.message}</p>) : (dataFriends.getFriends.map(user =>
-                  <option value={user.id}>{user.username}</option>
-                )))
-              }
-            </select>
-          </label>
+          <div className='input-container'>
+            <label>
+              Pick your friend:
+              <div style={{ color: "black" }}>
+                <Select menuPlacement="auto" required id="addFriendToThisGroupSelect" onChange={(eventKey) => { setSelectedFriend(eventKey.value) }} options=
+                  {
+                    (loadingFriends || !dataFriends) ? (<></>) : (dataFriends.getFriends.map(user => ({ value: user.id, label: user.username })))
+                  }
+                />
+              </div>
+            </label>
+          </div>
           {renderErrorMessage("alreadyInGroup")}
           <div className="button-container">
             <input type="submit" value={(!loadingAddUserToGroup) ? ("Submit") : ("Loading")} />
