@@ -607,11 +607,11 @@ function InitialData() {
   const HandleAddUserToGroup = (event) => {
     event.preventDefault();
     setErrorMessages({});
-    if (dataGroupsMembers.getMembersOfGroup.find(userInfo => userInfo.id == selectedFriend.value)) {
+    if (dataGroupsMembers.getMembersOfGroup.find(userInfo => userInfo.id == selectedFriend)) {
       setErrorMessages({ name: "alreadyInGroup", message: errors.alreadyInGroup });
     }
     else {
-      getAddUserToGroup({ variables: { userid: selectedFriend.value, groupid: selectedGroup.id } });
+      getAddUserToGroup({ variables: { userid: selectedFriend, groupid: selectedGroup.id } });
       setFetchedGroupMembersName("");
     }
   }
